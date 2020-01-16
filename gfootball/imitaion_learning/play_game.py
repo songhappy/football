@@ -10,6 +10,7 @@ import keras
 from keras import metrics, regularizers
 import numpy as np
 import random
+from collections import deque
 
 TRAIN=True
 EPISODES=1000
@@ -20,6 +21,7 @@ class MovementPredictor(object):
         self.epsilon_min = 0.01
         self.state_shape = state_shape
         self.action_size = action_size
+        self.memory = deque(maxlen=2000)
         self.model = self._build_model(state_shape)
 
     def _build_model(self, input_shape):
@@ -40,6 +42,9 @@ class MovementPredictor(object):
             return(random.randrange(self.action_size))
         act_values = self.model.predict(state)
         return np.argmax(act_values[0])
+
+    def memorize(self, state, action, reward, next_state, done):
+        self.memory.append((state, action, reward, next_state, done))
 
     def train(self,  states, labels, batch_size, epoch=10):
         self.model.fit(x=states, y=labels, batch_size=batch_size, epochs=epoch)
@@ -120,17 +125,20 @@ def main():
     actions_size = len(action_set_dict["default"])
     labels, states = load_data(input_path)
 
-    if (TRAIN):
+    if (not TRAIN):
         agent = MovementPredictor(actions_size, [states[0].size])
         agent.train(states, labels, 2, epoch=10)
     else:
         env = football_env.FootballEnv(cfg)
         agent = MovementPredictor(actions_size, [states[0].size])
         obs, reward, done, score_reward = env.step([])
+        total_reward = 0
         for e in range(EPISODES):
             state = observation_sim([obs])
             action = agent.act(state)
-            obs, reward, done, score_reward = env.step([action])
+            obs, reward, done, score_reward = env.step(action)
+            total_reward = total_reward + reward
+    print("total_reward: "+ total_reward)
 
 if __name__ == '__main__':
     main()
