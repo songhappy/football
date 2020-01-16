@@ -11,12 +11,16 @@ from keras import metrics, regularizers
 import numpy as np
 import random
 
+TRAIN=True
+EPISODES=1000
+
 class MovementPredictor(object):
 
     def __init__(self, action_size, state_shape):
         self.epsilon_min = 0.01
-        self.model = self._build_model(state_shape)
+        self.state_shape = state_shape
         self.action_size = action_size
+        self.model = self._build_model(state_shape)
 
     def _build_model(self, input_shape):
         model = keras.Sequential()
@@ -27,7 +31,7 @@ class MovementPredictor(object):
 
         model.add(keras.layers.Dense(20, activation='relu'))
         model.add(keras.layers.Dropout(0.1))
-        model.add(keras.layers.Dense(16, activation='relu'))
+        model.add(keras.layers.Dense(self.action_size, activation='relu'))
         model.compile(loss="sparse_categorical_crossentropy", optimizer="adam")
         return model
 
@@ -37,20 +41,14 @@ class MovementPredictor(object):
         act_values = self.model.predict(state)
         return np.argmax(act_values[0])
 
+    def train(self,  states, labels, batch_size, epoch=10):
+        self.model.fit(x=states, y=labels, batch_size=batch_size, epochs=epoch)
 
-    def train(self, labels, states, batch_size):
-        self.model.fit(x=states, y=labels, batch_size=batch_size)
+    def load(self, path_name):
+        self.model.load_weights(path_name)
 
-
-    def infer(self, feature):
-        pass
-
-
-# last_state = env.step([])
-# while
-# action = agent.act()
-# last_state, new reward = env,step(action)
-#
+    def save(self, path_name):
+        self.model.save_weights(path_name)
 
 def observation_sim(obss):
     # except right_agent_sticky_actions, right_agent_controlled_player, score, ball_owner_player, steps_left
@@ -88,6 +86,7 @@ def observation_sim(obss):
     return np.array(final_obs, dtype=np.float32)
 
 def load_data(dump_file):
+    # labels, array(), states, array(n, 70)
     with open(dump_file, 'rb') as f:
         dumps = six.moves.cPickle.load(f)
     print(dumps[0])
@@ -95,47 +94,43 @@ def load_data(dump_file):
     observations = []
     actions = action_set_dict['default']
     actions_dict = {actions[i]: i for i in range(0, len(actions))}
+
     for dump in dumps:
         key = dump['debug']['action'][0]
-        labels.append(actions_dict.get(key))
+        labels.append(actions_dict[key])
         observations.append(dump['observation'])
     states = observation_sim(observations)
-    print(states[0])
-    print(states[0].size)
     return(np.array(labels, dtype=np.float32), np.array(states, dtype=np.float32))
 
 
 def main():
     input_path = "/home/arda/intelWork/projects/googleFootball/dumps/episode_done_20191220-101211706616.dump"
+    import os
+    print(os.listdir("/home/arda/intelWork/projects/googleFootball/dumps/"))
+
     players = ['ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=/home/arda/intelWork/projects/googleFootball/trained/academy_run_to_score_with_keeper_v2']
     cfg = config.Config({
         'action_set': 'default',
         'dump_full_episodes': True,
         'players': players,
         'real_time': True,
-        'level': 'academy_pass_and_shoot_with_keeper'
+        'level': 'academy_pass_and_shoot_with_keeper',
     })
 
     actions_size = len(action_set_dict["default"])
     labels, states = load_data(input_path)
-    agent = MovementPredictor(actions_size, [states[0].size])
-    agent.train(labels, states, 2)
 
-    env = football_env.FootballEnv(cfg)
-    obs, reward, done, score_reward = env.step([])
-    #while True:
-        #state = observation_sim((obs))
-    #    action = agent.act(state)
-
-
-
-   # obs115 = wrapper.observation([obs])
-   # print(obs115)
-
-
-    load_data(input_path, env)
-
-    #TODO, rewrite wrapper.observation or call it in the right way to get simple115 floats from observation
+    if (TRAIN):
+        agent = MovementPredictor(actions_size, [states[0].size])
+        agent.train(states, labels, 2, epoch=10)
+    else:
+        env = football_env.FootballEnv(cfg)
+        agent = MovementPredictor(actions_size, [states[0].size])
+        obs, reward, done, score_reward = env.step([])
+        for e in range(EPISODES):
+            state = observation_sim([obs])
+            action = agent.act(state)
+            obs, reward, done, score_reward = env.step([action])
 
 if __name__ == '__main__':
     main()
