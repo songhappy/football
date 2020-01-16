@@ -26,6 +26,7 @@ from absl import logging
 
 from gfootball.env import config
 from gfootball.env import football_env
+from gfootball.env import wrappers
 
 FLAGS = flags.FLAGS
 
@@ -41,6 +42,9 @@ flags.DEFINE_bool('render', True, 'Whether to do game rendering.')
 
 def main(_):
   players = FLAGS.players.split(';') if FLAGS.players else ''
+  players = [
+      'ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=/home/arda/intelWork/projects/googleFootball/trained/academy_run_to_score_with_keeper_v2']
+
   assert not (any(['agent' in player for player in players])
              ), ('Player type \'agent\' can not be used with play_game.')
   cfg = config.Config({
@@ -55,11 +59,21 @@ def main(_):
   if FLAGS.render:
     env.render()
   env.reset()
+  import time
+  begin = time.time()
+  end = begin + 3600
+  total_reward = 0
+  total_checkpoint_reward = 0
   try:
-    while True:
-      _, _, done, _ = env.step([])
+    while end > time.time():
+      obs, reward, done, info = env.step([])
+      checkpoint_reward = wrappers.CheckpointRewardWrapper(env)
+      total_reward = total_reward + reward
+      total_checkpoint_reward = total_checkpoint_reward + checkpoint_reward
       if done:
         env.reset()
+    print("total_reward: " + total_reward)
+    print("total_checkpoint_reward: " + total_checkpoint_reward)
   except KeyboardInterrupt:
     logging.warning('Game stopped, writing dump...')
     env.write_dump('shutdown')

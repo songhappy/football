@@ -2,18 +2,20 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import six.moves.cPickle
-import numpy as np
 from gfootball.env.football_action_set import *
 from gfootball.env import config
 from gfootball.env import football_env
+from gfootball.env import wrappers
+
 import keras
-from keras import metrics, regularizers
+from keras import regularizers
 import numpy as np
 import random
 from collections import deque
+import time
 
-TRAIN=True
-EPISODES=1000
+TRAIN = True
+DURATION = 600
 
 class MovementPredictor(object):
 
@@ -131,14 +133,20 @@ def main():
     else:
         env = football_env.FootballEnv(cfg)
         agent = MovementPredictor(actions_size, [states[0].size])
-        obs, reward, done, score_reward = env.step([])
+        obs, reward, done, info = env.step([])
+        begin = time.time()
+        end = begin + DURATION
         total_reward = 0
-        for e in range(EPISODES):
+        total_checkpoint_reward = 0
+        while end > time.time():
             state = observation_sim([obs])
             action = agent.act(state)
-            obs, reward, done, score_reward = env.step(action)
+            obs, reward, done, info = env.step(action)
+            checkpoint_reward = wrappers.CheckpointRewardWrapper(env)
             total_reward = total_reward + reward
-    print("total_reward: "+ total_reward)
+            total_checkpoint_reward = total_checkpoint_reward + checkpoint_reward
+        print("total_reward: "+total_reward)
+        print("total_checkpoint_reward: "+total_checkpoint_reward)
 
 if __name__ == '__main__':
     main()
