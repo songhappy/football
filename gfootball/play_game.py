@@ -67,7 +67,8 @@ def main(_):
   try:
     while end > time.time():
       obs, reward, done, info = env.step([])
-      checkpoint_reward = wrappers.CheckpointRewardWrapper(env)
+      wrapper= wrappers.CheckpointRewardWrapper(env)
+      checkpoint_reward = wrapper.reward(reward)
       total_reward = total_reward + reward
       total_checkpoint_reward = total_checkpoint_reward + checkpoint_reward
       if done:

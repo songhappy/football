@@ -142,7 +142,8 @@ def main():
             state = observation_sim([obs])
             action = agent.act(state)
             obs, reward, done, info = env.step(action)
-            checkpoint_reward = wrappers.CheckpointRewardWrapper(env)
+            wrapper = wrappers.CheckpointRewardWrapper(env)
+            checkpoint_reward = wrapper.reward(reward)
             total_reward = total_reward + reward
             total_checkpoint_reward = total_checkpoint_reward + checkpoint_reward
         print("total_reward: "+total_reward)
