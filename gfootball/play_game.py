@@ -33,7 +33,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('players', 'keyboard:left_players=1',
                     'Semicolon separated list of players, single keyboard '
                     'player on the left by default')
-flags.DEFINE_string('level', '', 'Level to play')
+flags.DEFINE_string('level', 'academy_pass_and_shoot_with_keeper', 'Level to play')
 flags.DEFINE_enum('action_set', 'default', ['default', 'full'], 'Action set')
 flags.DEFINE_bool('real_time', True,
                   'If true, environment will slow down so humans can play.')
@@ -67,14 +67,22 @@ def main(_):
   try:
     while end > time.time():
       obs, reward, done, info = env.step([])
+      print("********************************************")
+      print(obs)
+      print("********************************************")
+
+      print(env.observation())
+      print("********************************************")
+      print(env.unwrapped.observation())
+      print(reward)
       wrapper= wrappers.CheckpointRewardWrapper(env)
-      checkpoint_reward = wrapper.reward(reward)
+      #checkpoint_reward = wrapper.reward([reward])
       total_reward = total_reward + reward
-      total_checkpoint_reward = total_checkpoint_reward + checkpoint_reward
+      #total_checkpoint_reward = total_checkpoint_reward + checkpoint_reward
       if done:
         env.reset()
     print("total_reward: " + total_reward)
-    print("total_checkpoint_reward: " + total_checkpoint_reward)
+    #print("total_checkpoint_reward: " + total_checkpoint_reward)
   except KeyboardInterrupt:
     logging.warning('Game stopped, writing dump...')
     env.write_dump('shutdown')

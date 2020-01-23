@@ -78,8 +78,8 @@ def observation_sim(obss):
         o.extend(list(map(lambda x: 1 if x else 0, obs['right_team_active'])))
         o.extend(list(map(lambda x: 1 if x else 0, obs['right_team_yellow_card'])))
         o.extend(obs['right_team_roles'].flatten())
-        o.extend(obs['left_agent_sticky_actions'][0].flatten())
-        o.extend(obs['left_agent_controlled_player'])
+      #  o.extend(obs['left_agent_sticky_actions'][0].flatten())
+     #   o.extend(obs['left_agent_controlled_player'])
         if obs['ball_owned_team'] == -1:
             o.extend([1, 0, 0])
         if obs['ball_owned_team'] == 0:
@@ -115,7 +115,7 @@ def main():
     import os
     print(os.listdir("/home/arda/intelWork/projects/googleFootball/dumps/"))
 
-    players = ['ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=/home/arda/intelWork/projects/googleFootball/trained/academy_run_to_score_with_keeper_v2']
+    players = ['agent:left_players=1']
     cfg = config.Config({
         'action_set': 'default',
         'dump_full_episodes': True,
@@ -132,22 +132,31 @@ def main():
         agent.train(states, labels, 2, epoch=10)
     else:
         env = football_env.FootballEnv(cfg)
+        env.reset()
         agent = MovementPredictor(actions_size, [states[0].size])
-        obs, reward, done, info = env.step([])
+        obs, reward, done, info = env.step(env.action_space.sample())
         begin = time.time()
         end = begin + DURATION
         total_reward = 0
+        done = False
         total_checkpoint_reward = 0
+        print("________________________")
+        print(obs)
+        i = 0
         while end > time.time():
-            state = observation_sim([obs])
+            print("step: ", i)
+            state = observation_sim(obs)
             action = agent.act(state)
-            obs, reward, done, info = env.step(action)
+            obs, reward, done, info = env.step([action])
             wrapper = wrappers.CheckpointRewardWrapper(env)
-            checkpoint_reward = wrapper.reward(reward)
+            #checkpoint_reward = wrapper.reward(reward)
             total_reward = total_reward + reward
-            total_checkpoint_reward = total_checkpoint_reward + checkpoint_reward
-        print("total_reward: "+total_reward)
-        print("total_checkpoint_reward: "+total_checkpoint_reward)
+            #total_checkpoint_reward = total_checkpoint_reward + checkpoint_reward
+            i = i + 1
+            if done:
+                env.reset()
+            print("total_reward: ", total_reward)
+        #print("total_checkpoint_reward: "+total_checkpoint_reward)
 
 if __name__ == '__main__':
     main()
