@@ -192,10 +192,11 @@ class FootballEnv(gym.Env):
   def observation(self):
     if not self._cached_observation:
       self._cached_observation = self._env.observation()
-      if self._agent:
-        self._cached_observation = self._convert_observations(
-            self._cached_observation, self._agent,
-            self._agent_left_position, self._agent_right_position)
+      # Jan28,2020, for imitation learning
+      # if self._agent:
+      #   self._cached_observation = self._convert_observations(
+      #       self._cached_observation, self._agent,
+      #       self._agent_left_position, self._agent_right_position)
     return self._cached_observation
 
   def write_dump(self, name):

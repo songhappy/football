@@ -6,16 +6,20 @@ from gfootball.env.football_action_set import *
 from gfootball.env import config
 from gfootball.env import football_env
 from gfootball.env import wrappers
-
+import  sys
 import keras
 from keras import regularizers
 import numpy as np
 import random
 from collections import deque
 import time
+import os
+
 
 TRAIN = True
 DURATION = 600
+RENDER = True
+model_path = "/home/arda/intelWork/projects/googleFootball/dump3000_model"
 
 class MovementPredictor(object):
 
@@ -92,11 +96,10 @@ def observation_sim(obss):
         final_obs.append(o)
     return np.array(final_obs, dtype=np.float32)
 
-def load_data(dump_file):
+def load_1file(dump_file):
     # labels, array(), states, array(n, 70)
     with open(dump_file, 'rb') as f:
         dumps = six.moves.cPickle.load(f)
-    print(dumps[0])
     labels=[]
     observations = []
     actions = action_set_dict['default']
@@ -109,11 +112,22 @@ def load_data(dump_file):
     states = observation_sim(observations)
     return(np.array(labels, dtype=np.float32), np.array(states, dtype=np.float32))
 
+def load_data(input_path):
+    files = os.listdir(input_path)
+    labels = []
+    states = []
+    for ifile in files:
+        ilabels, istates = load_1file(input_path + ifile)
+        labels.append(ilabels)
+        states.append(istates)
+
+    labels = np.concatenate(labels).flatten()
+    states = np.concatenate(states).reshape(351989, 59)
+
+    return labels, states
 
 def main():
-    input_path = "/home/arda/intelWork/projects/googleFootball/dumps/episode_done_20191220-101211706616.dump"
-    import os
-    print(os.listdir("/home/arda/intelWork/projects/googleFootball/dumps/"))
+    input_path = "/home/arda/intelWork/projects/googleFootball/dump3000/"
 
     players = ['agent:left_players=1']
     cfg = config.Config({
@@ -125,38 +139,32 @@ def main():
     })
 
     actions_size = len(action_set_dict["default"])
-    labels, states = load_data(input_path)
-
     if (not TRAIN):
-        agent = MovementPredictor(actions_size, [states[0].size])
-        agent.train(states, labels, 2, epoch=10)
+        labels, states = load_data(input_path)
+        agent = MovementPredictor(actions_size, [59])
+        agent.train(states, labels, 64, epoch=20)
+        agent.save(model_path)
     else:
         env = football_env.FootballEnv(cfg)
+        if RENDER:
+            env.render()
         env.reset()
-        agent = MovementPredictor(actions_size, [states[0].size])
+        agent = MovementPredictor(actions_size, [59])
+        agent.load(model_path)
+        print(agent.model.get_weights())
         obs, reward, done, info = env.step(env.action_space.sample())
-        begin = time.time()
-        end = begin + DURATION
+        nepisode = 0
         total_reward = 0
-        done = False
-        total_checkpoint_reward = 0
-        print("________________________")
-        print(obs)
-        i = 0
-        while end > time.time():
-            print("step: ", i)
-            state = observation_sim(obs)
+        while nepisode < 3000:
+            state = observation_sim([obs])
             action = agent.act(state)
-            obs, reward, done, info = env.step([action])
-            wrapper = wrappers.CheckpointRewardWrapper(env)
-            #checkpoint_reward = wrapper.reward(reward)
+            print(action)
+            obs, reward, done, info = env.step(action)
             total_reward = total_reward + reward
-            #total_checkpoint_reward = total_checkpoint_reward + checkpoint_reward
-            i = i + 1
             if done:
                 env.reset()
+                nepisode = nepisode + 1
             print("total_reward: ", total_reward)
-        #print("total_checkpoint_reward: "+total_checkpoint_reward)
 
 if __name__ == '__main__':
     main()

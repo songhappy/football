@@ -48,40 +48,28 @@ def main(_):
   assert not (any(['agent' in player for player in players])
              ), ('Player type \'agent\' can not be used with play_game.')
   cfg = config.Config({
-      'action_set': FLAGS.action_set,
+      'action_set': 'default',
       'dump_full_episodes': True,
       'players': players,
-      'real_time': FLAGS.real_time,
+      'real_time': True,
+      'level': 'academy_pass_and_shoot_with_keeper',
   })
-  if FLAGS.level:
-    cfg['level'] = FLAGS.level
+
   env = football_env.FootballEnv(cfg)
   if FLAGS.render:
     env.render()
   env.reset()
-  import time
-  begin = time.time()
-  end = begin + 3600
   total_reward = 0
-  total_checkpoint_reward = 0
   try:
-    while end > time.time():
+    nepisode = 0
+    while nepisode < 3000:
       obs, reward, done, info = env.step([])
-      print("********************************************")
-      print(obs)
-      print("********************************************")
-
-      print(env.observation())
-      print("********************************************")
-      print(env.unwrapped.observation())
-      print(reward)
-      wrapper= wrappers.CheckpointRewardWrapper(env)
-      #checkpoint_reward = wrapper.reward([reward])
       total_reward = total_reward + reward
-      #total_checkpoint_reward = total_checkpoint_reward + checkpoint_reward
       if done:
         env.reset()
-    print("total_reward: " + total_reward)
+        nepisode = nepisode + 1
+    print("total_episodes: ", nepisode)
+    print("total_reward: ", total_reward)
     #print("total_checkpoint_reward: " + total_checkpoint_reward)
   except KeyboardInterrupt:
     logging.warning('Game stopped, writing dump...')
