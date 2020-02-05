@@ -18,7 +18,7 @@ import os
 
 TRAIN = True
 DURATION = 600
-RENDER = True
+RENDER = False
 model_path = "/home/arda/intelWork/projects/googleFootball/dump3000_model"
 
 class MovementPredictor(object):
@@ -33,13 +33,10 @@ class MovementPredictor(object):
     def _build_model(self, input_shape):
         model = keras.Sequential()
         model.add(keras.layers.Dense(40, activation='relu',
-                                     kernel_regularizer=regularizers.l2(0.01),
                                      input_shape=input_shape))
-        model.add(keras.layers.Dropout(0.1))
 
         model.add(keras.layers.Dense(20, activation='relu'))
-        model.add(keras.layers.Dropout(0.1))
-        model.add(keras.layers.Dense(self.action_size, activation='relu'))
+        model.add(keras.layers.Dense(self.action_size, activation='softmax'))
         model.compile(loss="sparse_categorical_crossentropy", optimizer="adam")
         return model
 
@@ -151,20 +148,21 @@ def main():
         env.reset()
         agent = MovementPredictor(actions_size, [59])
         agent.load(model_path)
-        print(agent.model.get_weights())
+        #print(agent.model.get_weights())
         obs, reward, done, info = env.step(env.action_space.sample())
         nepisode = 0
-        total_reward = 0
+        episode_reward = 0
         while nepisode < 3000:
-            state = observation_sim([obs])
-            action = agent.act(state)
-            print(action)
+            feature = observation_sim([obs])
+            #action = agent.act(feature)
+            action = env.action_space.sample()
             obs, reward, done, info = env.step(action)
-            total_reward = total_reward + reward
+            episode_reward = episode_reward + reward
             if done:
                 env.reset()
                 nepisode = nepisode + 1
-            print("total_reward: ", total_reward)
+                print("episode:{}".format(nepisode), "episode_reward:{}".format(episode_reward))
+                episode_reward = 0
 
 if __name__ == '__main__':
     main()

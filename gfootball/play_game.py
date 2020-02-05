@@ -37,13 +37,13 @@ flags.DEFINE_string('level', 'academy_pass_and_shoot_with_keeper', 'Level to pla
 flags.DEFINE_enum('action_set', 'default', ['default', 'full'], 'Action set')
 flags.DEFINE_bool('real_time', True,
                   'If true, environment will slow down so humans can play.')
-flags.DEFINE_bool('render', True, 'Whether to do game rendering.')
+flags.DEFINE_bool('render', False, 'Whether to do game rendering.')
 
 
 def main(_):
   players = FLAGS.players.split(';') if FLAGS.players else ''
   players = [
-      'ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=/home/arda/intelWork/projects/googleFootball/trained/academy_run_to_score_with_keeper_v2']
+      'ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=/home/arda/intelWork/projects/googleFootball/trained/academy_run_to_score_with_keeper_v2_feb4']
 
   assert not (any(['agent' in player for player in players])
              ), ('Player type \'agent\' can not be used with play_game.')
@@ -59,18 +59,17 @@ def main(_):
   if FLAGS.render:
     env.render()
   env.reset()
-  total_reward = 0
+  episode_reward = 0
   try:
     nepisode = 0
     while nepisode < 3000:
       obs, reward, done, info = env.step([])
-      total_reward = total_reward + reward
+      episode_reward = episode_reward + reward
       if done:
         env.reset()
         nepisode = nepisode + 1
-    print("total_episodes: ", nepisode)
-    print("total_reward: ", total_reward)
-    #print("total_checkpoint_reward: " + total_checkpoint_reward)
+        print("episode:{}".format(nepisode), "episode_reward:{}".format(episode_reward))
+        episode_reward=0
   except KeyboardInterrupt:
     logging.warning('Game stopped, writing dump...')
     env.write_dump('shutdown')
