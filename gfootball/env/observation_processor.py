@@ -223,7 +223,7 @@ def write_dump(name, trace, config):
   for o in trace:
     if 'frame' in o._trace['observation']:
       temp_frames.append(o._trace['observation']['frame'])
-      del o._trace['observation']['frame']
+      #del o._trace['observation']['frame']
     to_pickle.append(o._trace)
   assert len(temp_frames) == 0 or len(temp_frames) == len(trace)
   # Add config to the first frame for our replay tools to use.

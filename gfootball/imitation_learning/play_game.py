@@ -34,10 +34,11 @@ class MovementPredictor(object):
         model = keras.Sequential()
         model.add(keras.layers.Dense(40, activation='relu',
                                      input_shape=input_shape))
-
+        model.add(keras.layers.Dense(80, activation="relu"))
+        model.add(keras.layers.Dropout(0.1))
         model.add(keras.layers.Dense(20, activation='relu'))
         model.add(keras.layers.Dense(self.action_size, activation='softmax'))
-        model.compile(loss="sparse_categorical_crossentropy", optimizer="adam")
+        model.compile(loss="sparse_categorical_crossentropy", optimizer="adam", metrics=['accuracy'])
         return model
 
     def act(self, state):
@@ -51,6 +52,10 @@ class MovementPredictor(object):
 
     def train(self,  states, labels, batch_size, epoch=10):
         self.model.fit(x=states, y=labels, batch_size=batch_size, epochs=epoch)
+
+    def evaluate(self, states, labels, batch_size=64):
+        loss, acc=self.model.evaluate(states, labels, batch_size, verbose=1)
+        return loss, acc
 
     def load(self, path_name):
         self.model.load_weights(path_name)
@@ -104,6 +109,8 @@ def load_1file(dump_file):
 
     for dump in dumps:
         key = dump['debug']['action'][0]
+        print(dump)
+        sys.exit()
         labels.append(actions_dict[key])
         observations.append(dump['observation'])
     states = observation_sim(observations)
@@ -114,17 +121,19 @@ def load_data(input_path):
     labels = []
     states = []
     for ifile in files:
-        ilabels, istates = load_1file(input_path + ifile)
-        labels.append(ilabels)
-        states.append(istates)
+        if "_1_" in ifile:
+            ilabels, istates = load_1file(input_path + ifile)
+            labels.append(ilabels)
+            states.append(istates)
 
-    labels = np.concatenate(labels).flatten()
-    states = np.concatenate(states).reshape(351989, 59)
-
+    labels = np.concatenate(labels)#.flatten()
+    states = np.concatenate(states)#.reshape(351989, 59)
+    print(labels.shape)
+    print(states.shape)
     return labels, states
 
 def main():
-    input_path = "/home/arda/intelWork/projects/googleFootball/dump3000/"
+    input_path = "/home/arda/intelWork/projects/googleFootball/dumpFeb4/"
 
     players = ['agent:left_players=1']
     cfg = config.Config({
@@ -132,14 +141,16 @@ def main():
         'dump_full_episodes': True,
         'players': players,
         'real_time': True,
-        'level': 'academy_pass_and_shoot_with_keeper',
+        'level': 'academy_run_to_score_with_keeper',
     })
 
     actions_size = len(action_set_dict["default"])
-    if (not TRAIN):
+    if ( TRAIN):
         labels, states = load_data(input_path)
         agent = MovementPredictor(actions_size, [59])
         agent.train(states, labels, 64, epoch=20)
+        loss, acc = agent.evaluate(states, labels)
+        print("loss:{}".format(loss), "acc:{}".format(acc))
         agent.save(model_path)
     else:
         env = football_env.FootballEnv(cfg)
@@ -154,8 +165,8 @@ def main():
         episode_reward = 0
         while nepisode < 3000:
             feature = observation_sim([obs])
-            #action = agent.act(feature)
-            action = env.action_space.sample()
+            action = agent.act(feature)
+            #action = env.action_space.sample()
             obs, reward, done, info = env.step(action)
             episode_reward = episode_reward + reward
             if done:

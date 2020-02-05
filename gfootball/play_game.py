@@ -52,7 +52,7 @@ def main(_):
       'dump_full_episodes': True,
       'players': players,
       'real_time': True,
-      'level': 'academy_pass_and_shoot_with_keeper',
+      'level': 'academy_run_to_score_with_keeper',
   })
 
   env = football_env.FootballEnv(cfg)
@@ -62,7 +62,7 @@ def main(_):
   episode_reward = 0
   try:
     nepisode = 0
-    while nepisode < 3000:
+    while nepisode < 30000:
       obs, reward, done, info = env.step([])
       episode_reward = episode_reward + reward
       if done:
