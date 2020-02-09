@@ -19,7 +19,7 @@ import os
 TRAIN = True
 DURATION = 600
 RENDER = False
-model_path = "/home/arda/intelWork/projects/googleFootball/dump3000_model"
+model_path = "/home/arda/intelWork/projects/googleFootball/dumpFeb4_model"
 
 class MovementPredictor(object):
 
@@ -34,6 +34,7 @@ class MovementPredictor(object):
         model = keras.Sequential()
         model.add(keras.layers.Dense(40, activation='relu',
                                      input_shape=input_shape))
+        model.add(keras.layers.Dropout(0.1))
         model.add(keras.layers.Dense(80, activation="relu"))
         model.add(keras.layers.Dropout(0.1))
         model.add(keras.layers.Dense(20, activation='relu'))
@@ -109,10 +110,10 @@ def load_1file(dump_file):
 
     for dump in dumps:
         key = dump['debug']['action'][0]
-        print(dump)
-        sys.exit()
         labels.append(actions_dict[key])
         observations.append(dump['observation'])
+        if 'frame' in dump['observation']:
+            print(dump['observation']['frame'])
     states = observation_sim(observations)
     return(np.array(labels, dtype=np.float32), np.array(states, dtype=np.float32))
 
@@ -145,26 +146,35 @@ def main():
     })
 
     actions_size = len(action_set_dict["default"])
-    if ( TRAIN):
+    feature_size = 83
+    if ( not TRAIN):
         labels, states = load_data(input_path)
-        agent = MovementPredictor(actions_size, [59])
-        agent.train(states, labels, 64, epoch=20)
-        loss, acc = agent.evaluate(states, labels)
-        print("loss:{}".format(loss), "acc:{}".format(acc))
+        train_split = 1700000
+        val_split=10000
+        train_labels = labels[0:train_split]; val_labels = labels[-val_split:-1]
+        train_states= states[0:train_split]; val_states = states[-val_split:-1]
+
+        agent = MovementPredictor(actions_size, [feature_size])
+        for nepoch in range(1, 21):
+            agent.train(train_states, train_labels, 64, epoch=1)
+            loss, acc = agent.evaluate(val_states, val_labels)
+            print("epoch={}".format(nepoch), "loss:{}".format(loss), "acc:{}".format(acc))
         agent.save(model_path)
     else:
         env = football_env.FootballEnv(cfg)
         if RENDER:
             env.render()
         env.reset()
-        agent = MovementPredictor(actions_size, [59])
+        agent = MovementPredictor(actions_size, [feature_size])
         agent.load(model_path)
         #print(agent.model.get_weights())
         obs, reward, done, info = env.step(env.action_space.sample())
         nepisode = 0
         episode_reward = 0
-        while nepisode < 3000:
-            feature = observation_sim([obs])
+        win = 0
+        lose = 0
+        while nepisode < 100:
+            feature = observation_sim(obs)
             action = agent.act(feature)
             #action = env.action_space.sample()
             obs, reward, done, info = env.step(action)
@@ -172,8 +182,12 @@ def main():
             if done:
                 env.reset()
                 nepisode = nepisode + 1
+                if(episode_reward >0): win = win + 1
+                elif episode_reward <0: lose = lose + 1
+
                 print("episode:{}".format(nepisode), "episode_reward:{}".format(episode_reward))
                 episode_reward = 0
+        print("win:{}".format(win), "lose:{}".format(lose))
 
 if __name__ == '__main__':
     main()

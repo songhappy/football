@@ -333,7 +333,7 @@ class ObservationProcessor(object):
       # consumes over 8G.
       no_video_trace = trace
       no_video_trace['observation'] = trace['observation'].copy()
-      del no_video_trace['observation']['frame']
+      #del no_video_trace['observation']['frame']
       self._state = ObservationState(no_video_trace)
     else:
       self._state = ObservationState(trace)
