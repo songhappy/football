@@ -42,34 +42,39 @@ flags.DEFINE_bool('render', False, 'Whether to do game rendering.')
 
 def main(_):
   players = FLAGS.players.split(';') if FLAGS.players else ''
-  players = [
-      'ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=/home/arda/intelWork/projects/googleFootball/trained/academy_run_to_score_with_keeper_v2_feb4']
 
   assert not (any(['agent' in player for player in players])
              ), ('Player type \'agent\' can not be used with play_game.')
   cfg = config.Config({
       'action_set': 'default',
       'dump_full_episodes': True,
+      'dump_scores': True,
       'players': players,
-      'real_time': True,
-      'level': 'academy_run_to_score_with_keeper',
+      'real_time': False,
+      'render': False,
+      'level': '11_vs_11_easy_stochastic',
   })
 
   env = football_env.FootballEnv(cfg)
   if FLAGS.render:
     env.render()
   env.reset()
-  episode_reward = 0
+  episode_reward_p = 0
+  episode_reward_n = 0
+  import time
+  begin = time.time()
   try:
     nepisode = 0
-    while nepisode < 30000:
+    step = 0
+    while nepisode < 10000:
+      step = step + 1
       obs, reward, done, info = env.step([])
-      episode_reward = episode_reward + reward
       if done:
-        env.reset()
         nepisode = nepisode + 1
-        print("episode:{}".format(nepisode), "episode_reward:{}".format(episode_reward))
-        episode_reward=0
+        print("episode:{}".format(nepisode), "score:{}".format(obs["score"]))
+        env.reset()
+    end = time.time()
+    print("total time: %.3f" % ((end-begin)/60), "min")
   except KeyboardInterrupt:
     logging.warning('Game stopped, writing dump...')
     env.write_dump('shutdown')
