@@ -78,7 +78,7 @@ def load_data(input_path, tag):
             labels.append(ilabels)
             states.append(istates)
 
-    labels = np.concatenate(labels)#.flatten()
+    labels = np.concatenate(labels).flatten()
     states = np.concatenate(states)#.reshape(351989, 59)
     print(labels.shape)
     print(states.shape)

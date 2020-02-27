@@ -21,7 +21,7 @@ TRAIN = True
 DURATION = 600
 RENDER = False
 DUMP = False
-model_path = "/home/arda/intelWork/projects/googleFootball/dumpFeb4_model"
+model_path = "/home/arda/intelWork/projects/googleFootball/dumpFeb4_model_im"
 
 def main():
     input_path = "/home/arda/intelWork/projects/googleFootball/dumpFeb4/"
