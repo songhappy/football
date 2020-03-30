@@ -83,13 +83,13 @@ class Config(object):
         'action_set': 'default',
         'custom_display_stats': None,
         'display_game_stats': True,
-        'dump_full_episodes': False,
-        'dump_scores': False,
+        'dump_full_episodes': True,
+        'dump_scores': True,
         'players': ['agent:left_players=1'],
         'level': '11_vs_11_stochastic',
         'physics_steps_per_frame': 10,
         'real_time': False,
-        'tracesdir': '/tmp/dumps/',
+        'tracesdir': '/home/arda/intelWork/projects/googleFootball/11vs11/dumpMar28',
         'video_quality_level': 0,  # 0 - low, 1 - medium, 2 - high
         'write_video': False
     }

@@ -289,12 +289,12 @@ class ObservationProcessor(object):
     self._dump_config['score'] = DumpConfig(
         max_length=50,
         max_count=(100000 if config['dump_scores'] else 0),
-        min_frequency=600,
+        min_frequency=1,
         snapshot_delay=10)
     self._dump_config['lost_score'] = DumpConfig(
         max_length=50,
         max_count=(100000 if config['dump_scores'] else 0),
-        min_frequency=600,
+        min_frequency=1,
         snapshot_delay=10)
     self._dump_config['episode_done'] = DumpConfig(
         max_length=10000,

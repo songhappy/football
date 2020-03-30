@@ -8,13 +8,14 @@ class MovementPredictor(object):
 
     def __init__(self, action_size, state_shape):
         self.epsilon_min = 0.01
-        self.gama = 0.9
+        self.gama = 0.99
+        self.maxLength = 100
+        self.states = []
+        self.actions = []
+        self.rewards = []
         self.state_shape = state_shape
         self.action_size = action_size
-        self.maxLength = 2000
-        self.states = deque(maxlen=self.maxLength)
-        self.actions = deque(maxlen=self.maxLength)
-        self.rewards = deque(maxlen=self.maxLength)
+        self.lr = 0.001
         self.model = self._build_model(state_shape)
 
     def _build_model(self, input_shape):
@@ -26,14 +27,16 @@ class MovementPredictor(object):
         model.add(keras.layers.Dropout(0.1))
         model.add(keras.layers.Dense(20, activation='relu'))
         model.add(keras.layers.Dense(self.action_size, activation='softmax'))
-        model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=['accuracy'])
+        optimizer = keras.optimizers.Adam(lr=self.lr)
+        model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
         return model
 
     def act(self, state):
         # if np.random.rand() <= self.epsilon_min:
         #     return(random.randrange(self.action_size))
-        act_values = self.model.predict(state)
-        return np.argmax(act_values[0])
+        policy = self.model.predict(state).flatten()
+        return np.random.choice(self.action_size, 1, p=policy)[0]
+        #return np.argmax(policy)
 
     def memorize(self, state, action, reward, done):
         self.rewards.append(reward)
@@ -44,7 +47,7 @@ class MovementPredictor(object):
         shaped = np.zeros([len(labels), self.action_size])
         for i in range(len(labels)):
             shaped[i][int(labels[i])] = 1
-        self.model.fit(x=states, y=shaped, batch_size=batch_size, epochs=epoch)
+        self.model.fit(x=states, y=shaped, batch_size=batch_size, epochs=epoch, verbose=0)
 
     def evaluate(self, states, labels, batch_size=64):
         shaped = np.zeros([len(labels), self.action_size])
@@ -60,21 +63,25 @@ class MovementPredictor(object):
         self.model.save_weights(path_name)
 
     def train_rl(self):
-        episode_length = len(self.rewards)
-        discounted_reward = self.discount_rewards(self.rewards)
-        discounted_reward -= np.mean(discounted_reward)
-        discounted_reward /= np.std(discounted_reward)
+        episode_length = len(self.rewards[-self.maxLength:])
+        discounted_reward = self.discount_rewards(self.rewards[-self.maxLength:])
+        # print(self.rewards)
+        # discounted_reward -= np.mean(discounted_reward)
+        # discounted_reward /= np.std(discounted_reward)
+        # print(discounted_reward)
         update_inputs = np.zeros([episode_length, self.state_shape[0]])
         advantages = np.zeros([episode_length, self.action_size])
 
         for i in range(episode_length):
-            update_inputs[i] = self.states[i]
-            advantages[i][self.actions[i]] = discounted_reward[i]
+            states = self.states[-self.maxLength:]
+            update_inputs[i] = states[i]
+            actions = self.actions[-self.maxLength:]
+            advantages[i][actions[i]] = discounted_reward[i]
 
-        self.model.fit(update_inputs, advantages, epochs=1, verbose=1)
-        self.states = deque(maxlen=self.maxLength)
-        self.actions = deque(maxlen=self.maxLength)
-        self.rewards = deque(maxlen=self.maxLength)
+        self.model.fit(update_inputs, advantages, batch_size=self.maxLength, epochs=1, verbose=1)
+        self.states = []
+        self.actions = []
+        self.rewards = []
 
     def discount_rewards(self, rewards):
         if not isinstance(rewards, np.ndarray):
