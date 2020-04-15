@@ -10,7 +10,7 @@ TRAINPG = True
 DURATION = 600
 RENDER = False
 DUMP = False
-model_path = "/home/arda/intelWork/projects/googleFootball/run_keeper/dumpFeb4_model_rl"
+model_path = "/home/arda/guoqiong/football/log/model"
 
 def main():
     players = ['agent:left_players=1']
@@ -28,6 +28,7 @@ def main():
     if(TRAINPG):
         from gfootball.intel.rl.policy_gradient import MovementPredictor
         env = football_env.FootballEnv(cfg)
+        env = wrappers.CheckpointRewardWrapper(env)
         if RENDER:
             env.render()
         env.reset()
@@ -37,7 +38,7 @@ def main():
         episode_reward = 0
         win = 0
         lose = 0
-        while nepisode < 100000:
+        while nepisode < 500000:
             feature = observation_sim(obs)
             action = agent.act(feature)
             obs, reward, done, info = env.step(action)
@@ -45,12 +46,12 @@ def main():
             if done:
                 print("episode:{}".format(nepisode), "episode_reward:{}".format(episode_reward))
                 env.reset()
-                if reward > 0:
-                    reward = np.array([1], dtype=float)
-                elif reward == 0:
-                    reward = np.array([-0.5], dtype=float)
-                else:
-                    reward = np.array([-1], dtype=float)
+                #if reward > 0:
+                #    reward = np.array([1], dtype=float)
+                #elif reward == 0:
+                #    reward = np.array([-0.5], dtype=float)
+                #else:
+                #    reward = np.array([-1], dtype=float)
                 nepisode = nepisode + 1
                 if (episode_reward > 0):
                     win = win + 1
