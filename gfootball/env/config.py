@@ -89,7 +89,7 @@ class Config(object):
         'level': '11_vs_11_stochastic',
         'physics_steps_per_frame': 10,
         'real_time': False,
-        'tracesdir': '/home/arda/intelWork/projects/googleFootball/11vs11/dumpMar28',
+        'tracesdir': '/tmp/dumps/',
         'video_quality_level': 0,  # 0 - low, 1 - medium, 2 - high
         'write_video': False
     }

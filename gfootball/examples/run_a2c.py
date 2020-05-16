@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Runs football_env on OpenAI's ppo2."""
+"""Runs football_env on OpenAI's a2c."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -24,9 +24,9 @@ from absl import flags
 from baselines import logger
 from baselines.bench import monitor
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
-from baselines.ppo2 import ppo2
+from baselines.a2c import a2c
 import gfootball.env as football_env
-from gfootball.examples import models
+from gfootball.examples import models  
 
 
 FLAGS = flags.FLAGS
@@ -44,7 +44,7 @@ flags.DEFINE_enum('policy', 'cnn', ['cnn', 'lstm', 'mlp', 'impala_cnn',
                   'Policy architecture')
 flags.DEFINE_integer('num_timesteps', int(2e6),
                      'Number of timesteps to run for.')
-flags.DEFINE_integer('num_envs', 2,
+flags.DEFINE_integer('num_envs', 8,
                      'Number of environments to run in parallel.')
 flags.DEFINE_integer('nsteps', 128, 'Number of environment steps per epoch; '
                      'batch size is nsteps * nenv')
@@ -83,7 +83,7 @@ def create_single_football_env(iprocess):
 
 
 def train(_):
-  """Trains a PPO2 policy."""
+  """Trains a a2c policy."""
   vec_env = SubprocVecEnv([
       (lambda _i=i: create_single_football_env(_i))
       for i in range(FLAGS.num_envs)
@@ -100,20 +100,16 @@ def train(_):
   config.gpu_options.allow_growth = True
   tf.Session(config=config).__enter__()
 
-  ppo2.learn(network=FLAGS.policy,
+  a2c.learn(network=FLAGS.policy,
              total_timesteps=FLAGS.num_timesteps,
              env=vec_env,
              seed=FLAGS.seed,
              nsteps=FLAGS.nsteps,
-             nminibatches=FLAGS.nminibatches,
-             noptepochs=FLAGS.noptepochs,
              max_grad_norm=FLAGS.max_grad_norm,
              gamma=FLAGS.gamma,
              ent_coef=FLAGS.ent_coef,
              lr=FLAGS.lr,
              log_interval=1,
-             save_interval=FLAGS.save_interval,
-             cliprange=FLAGS.cliprange,
              load_path=FLAGS.load_path)
 
 

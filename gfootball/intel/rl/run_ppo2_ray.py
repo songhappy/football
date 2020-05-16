@@ -23,15 +23,14 @@ from absl import app
 from absl import flags
 from baselines import logger
 from baselines.bench import monitor
-from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
-from baselines.ppo2 import ppo2
 import gfootball.env as football_env
-from gfootball.examples import models
+
+from gfootball.intel.rl import ppo2_ray
 
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('level', 'academy_empty_goal_close',
+flags.DEFINE_string('level', 'academy_run_to_score_with_keeper',
                     'Defines type of problem being solved')
 flags.DEFINE_enum('state', 'extracted_stacked', ['extracted',
                                                  'extracted_stacked'],
@@ -44,7 +43,7 @@ flags.DEFINE_enum('policy', 'cnn', ['cnn', 'lstm', 'mlp', 'impala_cnn',
                   'Policy architecture')
 flags.DEFINE_integer('num_timesteps', int(2e6),
                      'Number of timesteps to run for.')
-flags.DEFINE_integer('num_envs', 2,
+flags.DEFINE_integer('num_envs', 8,
                      'Number of environments to run in parallel.')
 flags.DEFINE_integer('nsteps', 128, 'Number of environment steps per epoch; '
                      'batch size is nsteps * nenv')
@@ -67,27 +66,20 @@ flags.DEFINE_bool('dump_scores', False,
 flags.DEFINE_string('load_path', None, 'Path to load initial checkpoint from.')
 
 
-def create_single_football_env(iprocess):
-  """Creates gfootball environment."""
-  env = football_env.create_environment(
-      env_name=FLAGS.level, stacked=('stacked' in FLAGS.state),
-      rewards=FLAGS.reward_experiment,
-      logdir=logger.get_dir(),
-      write_goal_dumps=FLAGS.dump_scores and (iprocess == 0),
-      write_full_episode_dumps=FLAGS.dump_full_episodes and (iprocess == 0),
-      render=FLAGS.render and (iprocess == 0),
-      dump_frequency=50 if FLAGS.render and iprocess == 0 else 0)
-  env = monitor.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(),
-                                                               str(iprocess)))
-  return env
-
-
+env_cfg = {
+      'level': 'academy_run_to_score_with_keeper',
+      'action_set': 'default',
+      'dump_full_episodes': False,
+      'dump_scores': False,
+      'players': ['agent:left_players=1,right_players=0'],
+      'dump_frequency': 50,
+      'logdir':logger.get_dir(),
+      'real_time': False,
+      'render': False
+  }
 def train(_):
   """Trains a PPO2 policy."""
-  vec_env = SubprocVecEnv([
-      (lambda _i=i: create_single_football_env(_i))
-      for i in range(FLAGS.num_envs)
-  ], context=None)
+  #vec_env = [create_single_football_env(i) for i in range(FLAGS.num_envs)]
 
   # Import tensorflow after we create environments. TF is not fork sake, and
   # we could be using TF as part of environment if one of the players is
@@ -100,22 +92,26 @@ def train(_):
   config.gpu_options.allow_growth = True
   tf.Session(config=config).__enter__()
 
-  ppo2.learn(network=FLAGS.policy,
-             total_timesteps=FLAGS.num_timesteps,
-             env=vec_env,
-             seed=FLAGS.seed,
-             nsteps=FLAGS.nsteps,
-             nminibatches=FLAGS.nminibatches,
-             noptepochs=FLAGS.noptepochs,
-             max_grad_norm=FLAGS.max_grad_norm,
-             gamma=FLAGS.gamma,
-             ent_coef=FLAGS.ent_coef,
-             lr=FLAGS.lr,
-             log_interval=1,
-             save_interval=FLAGS.save_interval,
-             cliprange=FLAGS.cliprange,
-             load_path=FLAGS.load_path)
+  import  time
+  start = time.time()
+  ppo2_ray.learn(nenvs=FLAGS.num_envs,
+                 network=FLAGS.policy,
+                 total_timesteps=FLAGS.num_timesteps,
+                 env_cfg= env_cfg,
+                 seed=FLAGS.seed,
+                 nsteps=FLAGS.nsteps,
+                 nminibatches=FLAGS.nminibatches,
+                 noptepochs=FLAGS.noptepochs,
+                 max_grad_norm=FLAGS.max_grad_norm,
+                 gamma=FLAGS.gamma,
+                 ent_coef=FLAGS.ent_coef,
+                 lr=FLAGS.lr,
+                 log_interval=1,
+                 save_interval=FLAGS.save_interval,
+                 cliprange=FLAGS.cliprange,
+                 load_path=FLAGS.load_path)
 
-
+  end = time.time()
+  print("************************", str(end - start))
 if __name__ == '__main__':
   app.run(train)
