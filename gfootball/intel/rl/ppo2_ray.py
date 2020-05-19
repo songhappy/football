@@ -84,6 +84,11 @@ def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=Non
     else: assert callable(cliprange)
     total_timesteps = int(total_timesteps)
 
+    # from pympler.tracker import SummaryTracker
+    # tracker = SummaryTracker()
+    # tracker.print_diff()
+
+
     env = create_env(env_cfg)
     model_cfg = {
         'nenvs' :nenvs,
@@ -235,7 +240,7 @@ def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=Non
         params_vals = []
         for e in params:
             params_vals.append(e.eval())
-            params_id = ray.put(params_vals)
+        #params_id = ray.put(params_vals)
 
     return model
 # Avoid division error when calculate the mean (in our case if epinfo is empty returns np.nan, not return an error)
@@ -248,6 +253,13 @@ def model2binary(model):
     model_data = in_file.read()  # if you only wanted to read 512 bytes, do .read(512)
     in_file.close()
     return model_data
+
+import psutil
+import gc
+def auto_garbage_collect(pct=0.7):
+    if psutil.virtual_memory().percent >= pct:
+        gc.collect()
+    return
 
 
 

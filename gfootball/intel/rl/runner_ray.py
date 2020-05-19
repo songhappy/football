@@ -61,6 +61,13 @@ def create_model(model_cfg, env, **network_kwargs):
 
     return model
 
+import psutil
+import gc
+def auto_garbage_collect(pct=0.7):
+    if psutil.virtual_memory().percent >= pct:
+        gc.collect()
+    return
+
 @ray.remote
 class Runner(AbstractEnvRunner):
     """
@@ -98,6 +105,8 @@ class Runner(AbstractEnvRunner):
     def run(self, params_id):
         # Here, we init the lists that will contain the mb of experiences
         self.update_model(params_id)
+        from pympler.tracker import SummaryTracker
+        tracker = SummaryTracker()
 
         model = self.model
         mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_neglogpacs = [],[],[],[],[],[]
@@ -152,6 +161,9 @@ class Runner(AbstractEnvRunner):
 
         out = [*map(sf01, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs)),
             mb_states, epinfos]
+        print("---------------------------------------------------------------------------------------")
+        auto_garbage_collect(0.8)
+        #tracker.print_diff()
 
         return out
 # obs, returns, masks, actions, values, neglogpacs, states = runner.run()
