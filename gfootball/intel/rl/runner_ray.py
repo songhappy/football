@@ -65,10 +65,15 @@ import psutil
 import gc
 def auto_garbage_collect(pct=0.7):
     if psutil.virtual_memory().percent >= pct:
+        print("call gc ")
         gc.collect()
     return
 
-@ray.remote
+
+from pympler.tracker import SummaryTracker
+from pympler import muppy, summary
+
+@ray.remote(memory=2500 * 1024 * 1024)
 class Runner(AbstractEnvRunner):
     """
     We use this object to make a mini batch of experiences
@@ -89,24 +94,44 @@ class Runner(AbstractEnvRunner):
         self.lam = lam
         # Discount rate
         self.gamma = gamma
+        self.s1 = summary.summarize(muppy.get_objects(remove_dups=False, include_frames=True))
 
-    def update_model(self, params_id):
-        param_vals = params_id
+    def update_model(self, param_vals):
         sess = get_session()
         params = tf.trainable_variables('ppo2_model')
-        assign = []
         for var, val in zip(params, param_vals):
-            assign.append(tf.assign(var, val))
+            update_placeholder = tf.placeholder(var.dtype, shape=var.get_shape())
+            assign = var.assign(update_placeholder)
+            sess.run(assign, {update_placeholder: val})
 
-        sess.run(assign)
+        del(params)
+        del(param_vals)
+        #self.print_num_of_total_parameters(params)
+
+    def print_num_of_total_parameters(self, params):
+        total_parameters = 0
+        parameters_string = ""
+
+        for variable in params:
+
+            shape = variable.get_shape()
+            variable_parameters = 1
+            for dim in shape:
+                variable_parameters *= dim.value
+            total_parameters += variable_parameters
+            if len(shape) == 1:
+                parameters_string += ("%s %d, " % (variable.name, variable_parameters))
+            else:
+                parameters_string += ("%s %s=%d, " % (variable.name, str(shape), variable_parameters))
+
+        print(parameters_string)
+        print("Total %d variables, %s params" % (len(params), "{:,}".format(total_parameters)))
 
 
 
     def run(self, params_id):
         # Here, we init the lists that will contain the mb of experiences
         self.update_model(params_id)
-        from pympler.tracker import SummaryTracker
-        tracker = SummaryTracker()
 
         model = self.model
         mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_neglogpacs = [],[],[],[],[],[]
@@ -158,14 +183,14 @@ class Runner(AbstractEnvRunner):
             mb_advs[t] = lastgaelam = delta + self.gamma * self.lam * nextnonterminal * lastgaelam
         mb_returns = mb_advs + mb_values
 
-
-        out = [*map(sf01, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs)),
+        res = [*map(sf01, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs)),
             mb_states, epinfos]
-        print("---------------------------------------------------------------------------------------")
-        auto_garbage_collect(0.8)
-        #tracker.print_diff()
 
-        return out
+        #s2 = summary.summarize(muppy.get_objects(remove_dups=False, include_frames=True))
+        #tracker.print_diff(self.s1, s2)
+
+
+        return res
 # obs, returns, masks, actions, values, neglogpacs, states = runner.run()
 def sf01(arr):
     """

@@ -112,7 +112,7 @@ def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=Non
     if load_path is not None:
         model.load(load_path)
 
-    ray.init()
+    ray.init(redis_max_memory=3*1024*1024*1024,object_store_memory=3*1024*1024*1024,lru_evict=True)
     params = tf.trainable_variables('ppo2_model')
     params_vals = []
     for e in params:
@@ -135,7 +135,9 @@ def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=Non
     tfirststart = time.perf_counter()
 
     nupdates = total_timesteps//nbatch
+
     for update in range(1, nupdates+1):
+
         assert nbatch % nminibatches == 0
         # Start timer
         tstart = time.perf_counter()
@@ -149,11 +151,11 @@ def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=Non
 
         # Get minibatch
         out = [r.run.remote(params_id) for r in runners]
-        out = ray.get(out)
+        outs = ray.get(out)
 
         obs, returns, masks, actions, values, neglogpacs, states, epinfos = [], [], [], [], [], [], [], []
 
-        for ele in out:
+        for ele in outs:
             obs.append(ele[0])
             returns.append(ele[1])
             masks.append(ele[2])
@@ -240,7 +242,7 @@ def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=Non
         params_vals = []
         for e in params:
             params_vals.append(e.eval())
-        #params_id = ray.put(params_vals)
+        params_id = ray.put(params_vals)
 
     return model
 # Avoid division error when calculate the mean (in our case if epinfo is empty returns np.nan, not return an error)
