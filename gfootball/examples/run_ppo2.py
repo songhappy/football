@@ -24,14 +24,15 @@ from absl import flags
 from baselines import logger
 from baselines.bench import monitor
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
-from baselines.ppo2 import ppo2
+#from baselines.ppo2 import ppo2
+from gfootball.intel.baselines import ppo2
 import gfootball.env as football_env
 from gfootball.examples import models
 
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('level', 'academy_empty_goal_close',
+flags.DEFINE_string('level', 'academy_run_to_score_with_keeper',
                     'Defines type of problem being solved')
 flags.DEFINE_enum('state', 'extracted_stacked', ['extracted',
                                                  'extracted_stacked'],
@@ -44,7 +45,7 @@ flags.DEFINE_enum('policy', 'cnn', ['cnn', 'lstm', 'mlp', 'impala_cnn',
                   'Policy architecture')
 flags.DEFINE_integer('num_timesteps', int(2e6),
                      'Number of timesteps to run for.')
-flags.DEFINE_integer('num_envs', 2,
+flags.DEFINE_integer('num_envs', 8,
                      'Number of environments to run in parallel.')
 flags.DEFINE_integer('nsteps', 128, 'Number of environment steps per epoch; '
                      'batch size is nsteps * nenv')
@@ -99,6 +100,8 @@ def train(_):
                           inter_op_parallelism_threads=ncpu)
   config.gpu_options.allow_growth = True
   tf.Session(config=config).__enter__()
+  import time
+  start = time.time()
 
   ppo2.learn(network=FLAGS.policy,
              total_timesteps=FLAGS.num_timesteps,
@@ -115,7 +118,8 @@ def train(_):
              save_interval=FLAGS.save_interval,
              cliprange=FLAGS.cliprange,
              load_path=FLAGS.load_path)
-
+  end = time.time()
+  print("************************", str(end - start))
 
 if __name__ == '__main__':
   app.run(train)

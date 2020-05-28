@@ -18,7 +18,7 @@ def constfn(val):
     return f
 
 def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=None, nsteps=2048, ent_coef=0.0, lr=3e-4,
-          vf_coef=0.5, max_grad_norm=0.5, gamma=0.99, lam=0.95,
+          vf_coef=0.5, max_grad_norm=0.5, gamma=0.99, lam=0.95, logdir=logger.get_dir(),
           log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,
           save_interval=0, load_path=None, model_fn=None, update_fn=None, init_fn=None, mpi_rank_weight=1, comm=None, **network_kwargs):
     '''
@@ -76,6 +76,7 @@ def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=Non
 
     '''
 
+    logger.DISABLED=False
     set_global_seeds(seed)
 
     if isinstance(lr, float): lr = constfn(lr)

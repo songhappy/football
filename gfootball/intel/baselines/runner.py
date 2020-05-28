@@ -36,7 +36,7 @@ class Runner(AbstractEnvRunner):
             # Take actions in env and look the results
             # Infos contains a ton of useful informations
             self.obs[:], rewards, self.dones, infos = self.env.step(actions)
-
+            # print("infos", infos)
             for info in infos:
                 maybeepinfo = info.get('episode')
                 if maybeepinfo: epinfos.append(maybeepinfo)
@@ -64,6 +64,9 @@ class Runner(AbstractEnvRunner):
             delta = mb_rewards[t] + self.gamma * nextvalues * nextnonterminal - mb_values[t]
             mb_advs[t] = lastgaelam = delta + self.gamma * self.lam * nextnonterminal * lastgaelam
         mb_returns = mb_advs + mb_values
+
+        # for i in range(self.nsteps):
+        #     print(mb_dones[i], mb_actions[i], mb_returns[i], mb_rewards[i])
 
         out = (*map(sf01, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs)),
             mb_states, epinfos)

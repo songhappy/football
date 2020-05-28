@@ -91,7 +91,6 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
 
     # Get the nb of env
     nenvs = env.num_envs
-    print("***************", nenvs)
 
     # Get state_space and action_space
     ob_space = env.observation_space
@@ -167,10 +166,10 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
                 for start in range(0, nbatch, nbatch_train):
                     end = start + nbatch_train
                     mbinds = inds[start:end]
-                    print(mbinds)
-                    print(obs.shape, returns.shape, masks.shape, actions.shape, values.shape, neglogpacs.shape)
-
-                    exit(1)
+                    # print(mbinds)
+                    # print(obs.shape, returns.shape, masks.shape, actions.shape, values.shape, neglogpacs.shape)
+                    #
+                    # exit(1)
                     slices = (arr[mbinds] for arr in (obs, returns, masks, actions, values, neglogpacs))
                     mblossvals.append(model.train(lrnow, cliprangenow, *slices))
         else: # recurrent version
@@ -207,6 +206,8 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
             logger.logkv("misc/total_timesteps", update*nbatch)
             logger.logkv("fps", fps)
             logger.logkv("misc/explained_variance", float(ev))
+            #print(epinfobuf)
+            #exit(1)
             logger.logkv('eprewmean', safemean([epinfo['r'] for epinfo in epinfobuf]))
             logger.logkv('eplenmean', safemean([epinfo['l'] for epinfo in epinfobuf]))
             if eval_env is not None:

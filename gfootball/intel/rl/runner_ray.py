@@ -154,6 +154,7 @@ class Runner(AbstractEnvRunner):
             self.obs[:], rewards, self.dones, infos = self.env.step(actions)
             if self.dones:
                 self.env.reset()
+           #print("infos", infos)
 
             for info in [infos]:
                 maybeepinfo = info.get('episode')
