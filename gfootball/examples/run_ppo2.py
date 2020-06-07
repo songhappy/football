@@ -114,7 +114,7 @@ def train(_):
              gamma=FLAGS.gamma,
              ent_coef=FLAGS.ent_coef,
              lr=FLAGS.lr,
-             log_interval=1,
+             log_interval=10,
              save_interval=FLAGS.save_interval,
              cliprange=FLAGS.cliprange,
              load_path=FLAGS.load_path)

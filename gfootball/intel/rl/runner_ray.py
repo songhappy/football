@@ -128,12 +128,10 @@ class Runner(AbstractEnvRunner):
         print("Total %d variables, %s params" % (len(params), "{:,}".format(total_parameters)))
 
 
-
     def run(self, params_id):
         # Here, we init the lists that will contain the mb of experiences
         self.update_model(params_id)
 
-        model = self.model
         mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_neglogpacs = [],[],[],[],[],[]
         mb_states = self.states
         epinfos = []
@@ -141,7 +139,7 @@ class Runner(AbstractEnvRunner):
         for _ in range(self.nsteps):
             # Given observations, get action value and neglopacs
             # We already have self.obs because Runner superclass run self.obs[:] = env.reset() on init
-            actions, values, self.states, neglogpacs = model.step(self.obs, S=self.states, M=self.dones)
+            actions, values, self.states, neglogpacs = self.model.step(self.obs, S=self.states, M=self.dones)
             mb_obs.append(self.obs.copy())
             mb_actions.append(actions)
             mb_values.append(values)
@@ -167,7 +165,7 @@ class Runner(AbstractEnvRunner):
         mb_values = np.asarray(mb_values, dtype=np.float32)
         mb_neglogpacs = np.asarray(mb_neglogpacs, dtype=np.float32)
         mb_dones = np.asarray(mb_dones, dtype=np.bool).reshape((self.nsteps, 1))
-        last_values = model.value(self.obs, S=self.states, M=self.dones)
+        last_values = self.model.value(self.obs, S=self.states, M=self.dones)
 
         # discount/bootstrap off value fn
         mb_returns = np.zeros_like(mb_rewards)

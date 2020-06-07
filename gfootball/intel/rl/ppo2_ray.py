@@ -4,6 +4,7 @@ import os.path as osp
 from baselines import logger
 from collections import deque
 from baselines.common import explained_variance, set_global_seeds
+from baselines.common.tf_util import get_session
 
 try:
     from mpi4py import MPI
@@ -17,7 +18,7 @@ def constfn(val):
         return val
     return f
 
-def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=None, nsteps=2048, ent_coef=0.0, lr=3e-4,
+def learn(*, address, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=None, nsteps=2048, ent_coef=0.0, lr=3e-4,
           vf_coef=0.5, max_grad_norm=0.5, gamma=0.99, lam=0.95, logdir=logger.get_dir(),
           log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,
           save_interval=0, load_path=None, model_fn=None, update_fn=None, init_fn=None, mpi_rank_weight=1, comm=None, **network_kwargs):
@@ -108,20 +109,23 @@ def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=Non
     nbatch_train = nbatch // nminibatches
     is_mpi_root = (MPI is None or MPI.COMM_WORLD.Get_rank() == 0)
 
+    ray.init(address=address, lru_evict=True)
+
     # Instantiate the model object (that creates act_model and train_model)
     model = create_model(model_cfg, env)
     if load_path is not None:
         model.load(load_path)
 
-    ray.init(redis_max_memory=3*1024*1024*1024,object_store_memory=3*1024*1024*1024,lru_evict=True)
     params = tf.trainable_variables('ppo2_model')
     params_vals = []
     for e in params:
         params_vals.append(e.eval())
     params_id = ray.put(params_vals)
 
-    # Instantiate the runner object
+    # sess = get_session()
+    # variables = ray.experimental.tf_utils.TensorFlowVariables()
 
+    # Instantiate the runner object
     runners = []
     for i in range(nenvs):
         runner = Runner.remote(env_cfg=env_cfg, model_cfg=model_cfg, nsteps=nsteps, gamma=gamma, lam=lam)
@@ -172,6 +176,8 @@ def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=Non
         actions = np.concatenate(actions)
         values = np.concatenate(values)
         neglogpacs = np.concatenate(neglogpacs)
+
+        runner_time = time.perf_counter()
 
         if update % log_interval == 0 and is_mpi_root: logger.info('Done.')
 
@@ -229,6 +235,9 @@ def learn(*, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=Non
             # logger.logkv('eprewmean', safemean([epinfo['r'] for epinfo in epinfobuf]))
             # logger.logkv('eplenmean', safemean([epinfo['l'] for epinfo in epinfobuf]))
             logger.logkv('misc/time_elapsed', tnow - tfirststart)
+            logger.logkv('misc/update', tnow - tstart)
+            logger.logkv('misc/runner', runner_time - tstart)
+            logger.logkv('misc/trainer', tnow - runner_time)
             for (lossval, lossname) in zip(lossvals, model.loss_names):
                 logger.logkv('loss/' + lossname, lossval)
 

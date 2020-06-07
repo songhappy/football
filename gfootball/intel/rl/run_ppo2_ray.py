@@ -26,9 +26,13 @@ from baselines.bench import monitor
 import gfootball.env as football_env
 
 from gfootball.intel.rl import ppo2_ray
-
+import ray
 
 FLAGS = flags.FLAGS
+
+flags.DEFINE_string('address', '',
+                    'Ip address of head node with port')
+
 
 flags.DEFINE_string('level', 'academy_run_to_score_with_keeper',
                     'Defines type of problem being solved')
@@ -94,7 +98,9 @@ def train(_):
 
   import  time
   start = time.time()
-  ppo2_ray.learn(nenvs=FLAGS.num_envs,
+
+  ppo2_ray.learn(address=FLAGS.address,
+                 nenvs=FLAGS.num_envs,
                  network=FLAGS.policy,
                  total_timesteps=FLAGS.num_timesteps,
                  env_cfg= env_cfg,
@@ -107,7 +113,7 @@ def train(_):
                  ent_coef=FLAGS.ent_coef,
                  lr=FLAGS.lr,
                  logdir=logger.get_dir(),
-                 log_interval=1,
+                 log_interval=10,
                  save_interval=FLAGS.save_interval,
                  cliprange=FLAGS.cliprange,
                  load_path=FLAGS.load_path)
