@@ -73,7 +73,7 @@ def auto_garbage_collect(pct=0.7):
 from pympler.tracker import SummaryTracker
 from pympler import muppy, summary
 
-@ray.remote(memory=2500 * 1024 * 1024)
+@ray.remote(num_cpus=1,memory=2500 * 1024 * 1024)
 class Runner(AbstractEnvRunner):
     """
     We use this object to make a mini batch of experiences

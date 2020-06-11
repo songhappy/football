@@ -3,16 +3,7 @@ from __future__ import division
 from __future__ import print_function
 import six.moves.cPickle
 from gfootball.env.football_action_set import *
-from gfootball.env import config
-from gfootball.env import football_env
-from gfootball.env import wrappers
-import  sys
-import keras
-from keras import regularizers
 import numpy as np
-import random
-from collections import deque
-import time
 import os
 score_length = 100
 
@@ -99,11 +90,6 @@ def filter_positives(labels, states, rewards, score_length):
         labels_out.extend(labels[i-score_length-1:i+1])
         states_out.extend(states[i-score_length-1:i+1])
     return labels_out, states_out
-
-
-
-
-
 
 def load_data(input_path):
     files = os.listdir(input_path)
