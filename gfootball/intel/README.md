@@ -10,7 +10,13 @@ This directory is built for running and training google football using analytics
         rl = 0.00008
         batch_size = 
    3.2 distribute ppo2 using ray and analytics zoo
-       run_ppo2_ray distribut runner_ray and ppo2_ray
+       steps to run distrbuted actors for ppo2 using ray
+       step1, install google football related tools on each node following guide on [google football github](https://github.com/google-research/football)
+       step2, install ray and setup ray cluster connect nodes using ray following guide on [ray setup](https://docs.ray.io/en/latest/using-ray-on-a-cluster.html#manual-cluster-setup)
+       step3, run the script
+            ```bash
+            python3 run_ppo2_ray.py
+            ```
    
 4. im_rl, using supervised learning and reinforcement learning
 
