@@ -19,6 +19,3 @@ This directory is built for running and training google football using analytics
             ```
    
 4. im_rl, using supervised learning and reinforcement learning
-
-
- 

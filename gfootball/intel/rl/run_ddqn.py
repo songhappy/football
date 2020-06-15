@@ -9,7 +9,6 @@ from keras.layers import Dense
 from keras.models import Sequential
 from keras.optimizers import Adam
 
-EPISODES = 1000
 
 
 from gfootball.intel.im.preprocess import *
@@ -63,32 +62,28 @@ def learn():    # In case of CartPole-v1, maximum length of episode is 500
             next_state = observation_sim(next_state)
             next_state = np.reshape(next_state, [1, state_size])
             # if an action make the episode end, then gives penalty of -100
-            reward = reward
 
             # save the sample <s, a, r, s'> to the replay memory
-            agent.append_sample(state, action, reward, next_state, done)
+            if abs(reward) > 0:
+                agent.append_sample(state, action, reward, next_state, done)
             # every time step do the training
-            agent.train_model()
-            score += reward
+                agent.train_model()
+            episode_reward += reward
             state = next_state
 
             if done:
                 # every episode update the target model to be same with model
                 sys.stdout.flush()
-                print("episode:{}".format(nepisode), "score:{}".format(score))
-                env.reset()
-                agent.update_target_model()
+                print("episode:{}".format(nepisode), "CheckPointReward:{}".format(reward))
 
                 # every episode, plot the play time
                 nepisode = nepisode + 1
-                if (score >= 1):
-                    win = win + 1
-                elif score < 1:
-                    lose = lose + 1
-                score = 0
+
+                env.reset()
 
         # save the model
-        if e % 50 == 0:
-            agent.model.save_weights("./save_model/ddqn.h5")
+        if e % 100 == 0:
+            agent.update_target_model()
+            agent.model.save_weights("./save_model/ddqn/"+str(e)+"ddqn.h5")
 if __name__ == '__main__':
     learn()

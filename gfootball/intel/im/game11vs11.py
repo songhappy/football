@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from gfootball.intel.im.supervised import MovementPredictor
+from gfootball.intel.im.models import MovementPredictor
 from gfootball.intel.im.preprocess import *
 from matplotlib import pyplot as plt
 

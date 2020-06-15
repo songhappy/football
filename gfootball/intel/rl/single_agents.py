@@ -98,36 +98,42 @@ class PGAgent(object):
 
 # A2C(Advantage Actor-Critic) agent for the Cartpole
 class A2CAgent:
-    def __init__(self, action_size, state_shape, model_path):
+    def __init__(self, state_size, action_size):
         # if you want to see Cartpole learning, then change to True
         self.render = False
         self.load_model = False
         # get size of state and action
-        self.state_shape = state_shape
+        self.state_size = state_size
         self.action_size = action_size
         self.value_size = 1
+        self.states = []
+        self.actions = []
+        self.rewards = []
 
         # These are hyper parameters for the Policy Gradient
         self.discount_factor = 0.99
-        self.actor_lr = 0.001
-        self.critic_lr = 0.005
+        self.actor_lr = 0.0001
+        self.critic_lr = 0.0005
 
         # create model for policy network
         self.actor = self.build_actor()
         self.critic = self.build_critic()
-        self.model_path = model_path
 
-        if self.load_model:
-            self.actor.load_weights(model_path + "/actor.h5")
-            self.critic.load_weights(model_path+"/critic.h5")
 
     # approximate policy and value using Neural Network
     # actor: state is input and probability of each action is output of model
     def build_actor(self):
         actor = Sequential()
-        actor.add(Dense(24, input_dim=self.state_shape[0], activation='relu',
+        actor.add(Dense(128, input_dim=self.state_size, activation='relu',
                         kernel_initializer='he_uniform'))
-        actor.add(Dense(self.action_size, activation='softmax',
+        actor.add(Dropout(0.1))
+        actor.add(Dense(52, activation='relu',
+                        kernel_initializer='he_uniform'))
+        actor.add(Dropout(0.1))
+        actor.add(Dense(52, activation='relu',
+                        kernel_initializer='he_uniform'))
+        actor.add(Dropout(0.05))
+        actor.add(Dense(self.action_size, activation='linear',
                         kernel_initializer='he_uniform'))
         actor.summary()
         # See note regarding crossentropy in cartpole_reinforce.py
@@ -138,10 +144,17 @@ class A2CAgent:
     # critic: state is input and value of state is output of model
     def build_critic(self):
         critic = Sequential()
-        critic.add(Dense(24, input_dim=self.state_shape[0], activation='relu',
-                         kernel_initializer='he_uniform'))
-        critic.add(Dense(self.value_size, activation='linear',
-                         kernel_initializer='he_uniform'))
+        critic.add(Dense(128, input_dim=self.state_size, activation='relu',
+                        kernel_initializer='he_uniform'))
+        critic.add(Dropout(0.1))
+        critic.add(Dense(52, activation='relu',
+                        kernel_initializer='he_uniform'))
+        critic.add(Dropout(0.1))
+        critic.add(Dense(52, activation='relu',
+                        kernel_initializer='he_uniform'))
+        critic.add(Dropout(0.05))
+        critic.add(Dense(self.action_size, activation='linear',
+                        kernel_initializer='he_uniform'))
         critic.summary()
         critic.compile(loss="mse", optimizer=Adam(lr=self.critic_lr))
         return critic
@@ -151,23 +164,32 @@ class A2CAgent:
         policy = self.actor.predict(state, batch_size=1).flatten()
         return np.random.choice(self.action_size, 1, p=policy)[0]
 
+    def discount_rewards(self, rewards):
+        if not isinstance(rewards, np.ndarray):
+            rewards = np.array(rewards)
+        discounted_rewards = np.zeros_like(rewards)
+        running_add = 0
+        for t in reversed(range(0, len(rewards))):
+            running_add = running_add * self.gama + rewards[t]
+            discounted_rewards[t] = running_add
+        return discounted_rewards
+
     # update policy network every episode
-    def train_model(self, state, action, reward, next_state, done):
-        target = np.zeros((1, self.value_size))
-        advantages = np.zeros((1, self.action_size))
+    def train_model(self, states, actions, rewards, done):
+        discounted_rewards = self.discount_rewards(rewards)
+        state_values = self.critic.predict(np.array(states))
+        episode_length = len(states)
 
-        value = self.critic.predict(state)[0]
-        next_value = self.critic.predict(next_state)[0]
+        advantages1d = discounted_rewards - np.reshape(state_values, len(state_values))
+        update_inputs = np.zeros((episode_length, self.state_size))
+        advantages = np.zeros((episode_length, self.action_size))
 
-        if done:
-            advantages[0][action] = reward - value
-            target[0][0] = reward
-        else:
-            advantages[0][action] = reward + self.discount_factor * (next_value) - value
-            target[0][0] = reward + self.discount_factor * next_value
+        for i in range(episode_length):
+            update_inputs[i] = states[i]
+            advantages[i][actions[i]] = advantages1d[i]
 
-        self.actor.fit(state, advantages, epochs=1, verbose=0)
-        self.critic.fit(state, target, epochs=1, verbose=0)
+        self.actor.fit(np.array(states), advantages, epochs=1, verbose=0)
+        self.critic.fit(np.array(states), discounted_rewards, epochs=1, verbose=0)
 
 class DoubleDQNAgent:
     def __init__(self, state_size, action_size):
@@ -183,8 +205,8 @@ class DoubleDQNAgent:
         self.learning_rate = 0.00008
         self.epsilon = 1.0
         self.epsilon_decay = 0.999
-        self.epsilon_min = 0.01
-        self.batch_size = 64
+        self.epsilon_min = 0.001
+        self.batch_size = 256
         self.train_start = 1000
         # create replay memory using deque
         self.memory = deque(maxlen=2000)
@@ -203,10 +225,15 @@ class DoubleDQNAgent:
     # state is input and Q Value of each action is output of network
     def build_model(self):
         model = Sequential()
-        model.add(Dense(24, input_dim=self.state_size, activation='relu',
+        model.add(Dense(128, input_dim=self.state_size, activation='relu',
                         kernel_initializer='he_uniform'))
-        model.add(Dense(24, activation='relu',
+        model.add(Dropout(0.1))
+        model.add(Dense(52, activation='relu',
                         kernel_initializer='he_uniform'))
+        model.add(Dropout(0.1))
+        model.add(Dense(52, activation='relu',
+                        kernel_initializer='he_uniform'))
+        model.add(Dropout(0.05))
         model.add(Dense(self.action_size, activation='linear',
                         kernel_initializer='he_uniform'))
         model.summary()

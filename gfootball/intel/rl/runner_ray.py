@@ -73,7 +73,7 @@ def auto_garbage_collect(pct=0.7):
 from pympler.tracker import SummaryTracker
 from pympler import muppy, summary
 
-@ray.remote(num_cpus=1,memory=2500 * 1024 * 1024)
+@ray.remote(memory=2500 * 1024 * 1024)
 class Runner(AbstractEnvRunner):
     """
     We use this object to make a mini batch of experiences
@@ -95,14 +95,21 @@ class Runner(AbstractEnvRunner):
         # Discount rate
         self.gamma = gamma
         self.s1 = summary.summarize(muppy.get_objects(remove_dups=False, include_frames=True))
+        self.assign = None
+        # self.mb_ob =[]
+        # self.mb_rewards = []
+        # self.mb_actions = []
+        # self.mb_values = []
+        # self.mb_dones = []
+        # self.mb_neglogpacs = []
 
     def update_model(self, param_vals):
         sess = get_session()
         params = tf.trainable_variables('ppo2_model')
         for var, val in zip(params, param_vals):
             update_placeholder = tf.placeholder(var.dtype, shape=var.get_shape())
-            assign = var.assign(update_placeholder)
-            sess.run(assign, {update_placeholder: val})
+            self.assign = var.assign(update_placeholder)
+            sess.run(self.assign, {update_placeholder: val})
 
         del(params)
         del(param_vals)

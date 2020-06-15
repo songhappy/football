@@ -61,15 +61,14 @@ def learn():    # In case of CartPole-v1, maximum length of episode is 500
             next_state = observation_sim(next_state)
             next_state = np.reshape(next_state, [1, state_size])
             # if an action make the episode end, then gives penalty of -100
-            reward = reward
-            agent.train_model(state, action, reward, next_state, done)
+            if abs(reward) > 0:
+                agent.train_model(state, action, reward, next_state, done)
 
-            score += reward
             state = next_state
 
             if done:
                 sys.stdout.flush()
-                print("episode:{}".format(nepisode), "score:{}".format(score))
+                print("episode:{}".format(nepisode), "CheckPointReward:{}".format(reward))
                 env.reset()
                 # if reward > 0:
                 #     reward = np.array([1], dtype=float)
@@ -78,16 +77,11 @@ def learn():    # In case of CartPole-v1, maximum length of episode is 500
                 # else:
                 #     reward = np.array([-1], dtype=float)
                 nepisode = nepisode + 1
-                if (score >= 1):
-                    win = win + 1
-                elif score < 1:
-                    lose = lose + 1
-                score = 0
 
 
         # save the model
-        if nepisode % 50 == 0:
-            agent.actor.save_weights(model_path+"/actor.h5")
-            agent.critic.save_weights(model_path+"/critic.h5")
+        if nepisode % 100 == 0:
+            agent.actor.save_weights("./save_model/a2c/"+ str(nepisode)+"/actor.h5")
+            agent.critic.save_weights("./save_model/a2c/"+str(nepisode)+"/critic.h5")
 if __name__ == '__main__':
     learn()
