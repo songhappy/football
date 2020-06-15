@@ -96,6 +96,7 @@ class Runner(AbstractEnvRunner):
         self.gamma = gamma
         self.s1 = summary.summarize(muppy.get_objects(remove_dups=False, include_frames=True))
         self.assign = None
+        self.update_placeholder = None
         # self.mb_ob =[]
         # self.mb_rewards = []
         # self.mb_actions = []
@@ -107,9 +108,9 @@ class Runner(AbstractEnvRunner):
         sess = get_session()
         params = tf.trainable_variables('ppo2_model')
         for var, val in zip(params, param_vals):
-            update_placeholder = tf.placeholder(var.dtype, shape=var.get_shape())
-            self.assign = var.assign(update_placeholder)
-            sess.run(self.assign, {update_placeholder: val})
+            self.update_placeholder = tf.placeholder(var.dtype, shape=var.get_shape())
+            self.assign = var.assign(self.update_placeholder)
+            sess.run(self.assign, {self.update_placeholder: val})
 
         del(params)
         del(param_vals)
