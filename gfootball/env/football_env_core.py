@@ -229,8 +229,8 @@ class FootballEnvCore(object):
           'FPS: %.1f, gameFPS: %.1f', self._cumulative_reward,
           single_observation['score'][0], single_observation['score'][1],
           self._step_count, fps, game_fps)
-      # print("Episode reward: {} score: [{}, {}], steps: {}, FPS: {}, gameFPS: {}".format(self._cumulative_reward,
-      #     single_observation['score'][0], single_observation['score'][1],self._step_count, fps, game_fps))
+      print("Episode reward: {} score: [{}, {}], steps: {}, FPS: {}, gameFPS: {}".format(self._cumulative_reward,
+          single_observation['score'][0], single_observation['score'][1],self._step_count, fps, game_fps))
     return self._observation, reward, episode_done
 
 

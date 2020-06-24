@@ -25,7 +25,7 @@ from baselines import logger
 from baselines.bench import monitor
 import gfootball.env as football_env
 
-from gfootball.intel.rl import ppo2_ray
+from gfootball.intel.ppo2 import ppo2_ray
 import ray
 
 FLAGS = flags.FLAGS
@@ -39,7 +39,7 @@ flags.DEFINE_string('level', 'academy_run_to_score_with_keeper',
 flags.DEFINE_enum('state', 'extracted_stacked', ['extracted',
                                                  'extracted_stacked'],
                   'Observation to be used for training.')
-flags.DEFINE_enum('reward_experiment', 'scoring',
+flags.DEFINE_enum('reward_experiment', 'scoring,checkpoints',
                   ['scoring', 'scoring,checkpoints'],
                   'Reward to be used for training.')
 flags.DEFINE_enum('policy', 'cnn', ['cnn', 'lstm', 'mlp', 'impala_cnn',
@@ -71,16 +71,20 @@ flags.DEFINE_string('load_path', None, 'Path to load initial checkpoint from.')
 
 
 env_cfg = {
-      'level': 'academy_run_to_score_with_keeper',
-      'action_set': 'default',
-      'dump_full_episodes': False,
-      'dump_scores': False,
-      'players': ['agent:left_players=1,right_players=0'],
-      'dump_frequency': 50,
-      'logdir':logger.get_dir(),
-      'real_time': False,
-      'render': False
-  }
+    'level': 'academy_run_to_score_with_keeper',
+    'action_set': 'default',
+    'dump_full_episodes': False,
+    'dump_scores': False,
+    'players': ['agent:left_players=1,right_players=0'],
+    'dump_frequency': 50,
+    'logdir': logger.get_dir(),
+    'real_time': False,
+    'render': False,
+    'stacked': False,
+    'rewards': "scoring,checkpoints",
+    'representation': 'extracted'
+}
+
 def train(_):
   """Trains a PPO2 policy."""
   #vec_env = [create_single_football_env(i) for i in range(FLAGS.num_envs)]

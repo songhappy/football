@@ -10,7 +10,7 @@ try:
     from mpi4py import MPI
 except ImportError:
     MPI = None
-from gfootball.intel.rl.runner_ray import *
+from gfootball.intel.ppo2.runner_ray import *
 import ray
 
 def constfn(val):
@@ -112,7 +112,7 @@ def learn(*, address, nenvs, network, env_cfg, total_timesteps, eval_env = None,
     ray.init(address=address, lru_evict=True)
 
     # Instantiate the model object (that creates act_model and train_model)
-    model = create_model(model_cfg, env)
+    model = create_model_ppo2(model_cfg, env)
     if load_path is not None:
         model.load(load_path)
 

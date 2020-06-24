@@ -1,77 +1,12 @@
 import numpy as np
 from baselines.common.runners import AbstractEnvRunner
 import ray
-from gfootball.env import config
-from gfootball.env import observation_preprocessing
 from baselines.common.tf_util import get_session
 
-import gfootball.env as football_env
 import tensorflow as tf
-from baselines.common.policies import build_policy
+from gfootball.intel.utils import create_env, create_model_ppo2
 
-def create_env(cfg_values):
-    """Creates gfootball environment."""
-    c = config.Config(cfg_values)
-    env = football_env.football_env.FootballEnv(c)
-    channel_dimensions = (
-        observation_preprocessing.SMM_WIDTH,
-        observation_preprocessing.SMM_HEIGHT)
-    number_of_left_players_agent_controls=1
-    number_of_right_players_agent_controls=0
-    rewards="scoring"
-    representation='extracted'
-    stacked=True
-    env =football_env._apply_output_wrappers(
-        env, rewards, representation, channel_dimensions,
-        (number_of_left_players_agent_controls +
-         number_of_right_players_agent_controls == 1), stacked)
-
-    return env
-
-def create_model(model_cfg, env, **network_kwargs):
-    network = model_cfg['network']
-    nsteps = model_cfg['nsteps']
-    nminibatches=model_cfg['nminibatches']
-    model_fn = model_cfg['model_fn']
-    ent_coef= model_cfg['ent_coef']
-    vf_coef= model_cfg['vf_coef']
-    max_grad_norm=model_cfg['max_grad_norm']
-    comm = model_cfg['comm']
-    mpi_rank_weight=model_cfg['mpi_rank_weight']
-    nenvs = model_cfg['nenvs']
-
-    policy = build_policy(env, network, **network_kwargs)
-
-    # Get state_space and action_space
-    ob_space = env.observation_space
-    ac_space = env.action_space
-
-    # Calculate the batch_size
-    nbatch = nenvs * nsteps
-    nbatch_train = nbatch // nminibatches
-
-    # Instantiate the model object (that creates act_model and train_model)
-    if model_fn is None:
-        from baselines.ppo2.model import Model
-        model_fn = Model
-
-    model = model_fn(policy=policy, ob_space=ob_space, ac_space=ac_space, nbatch_act=1, nbatch_train=nbatch_train,
-                     nsteps=nsteps, ent_coef=ent_coef, vf_coef=vf_coef,
-                     max_grad_norm=max_grad_norm, comm=comm, mpi_rank_weight=mpi_rank_weight)
-
-    return model
-
-import psutil
-import gc
-def auto_garbage_collect(pct=0.7):
-    if psutil.virtual_memory().percent >= pct:
-        print("call gc ")
-        gc.collect()
-    return
-
-
-from pympler.tracker import SummaryTracker
-from pympler import muppy, summary
+from pympler import muppy, summary, asizeof
 
 @ray.remote(memory=2500 * 1024 * 1024)
 class Runner(AbstractEnvRunner):
@@ -87,7 +22,7 @@ class Runner(AbstractEnvRunner):
         env = create_env(env_cfg)
 
         env.reset()
-        model = create_model(model_cfg, env)
+        model = create_model_ppo2(model_cfg, env)
 
         super().__init__(env=env, model=model, nsteps=nsteps)
         # Lambda used in GAE (General Advantage Estimation)
@@ -107,12 +42,12 @@ class Runner(AbstractEnvRunner):
     def update_model(self, param_vals):
         sess = get_session()
         params = tf.trainable_variables('ppo2_model')
+
         for var, val in zip(params, param_vals):
             self.update_placeholder = tf.placeholder(var.dtype, shape=var.get_shape())
             self.assign = var.assign(self.update_placeholder)
             sess.run(self.assign, {self.update_placeholder: val})
 
-        del(params)
         del(param_vals)
         #self.print_num_of_total_parameters(params)
 
@@ -158,6 +93,7 @@ class Runner(AbstractEnvRunner):
             # Infos contains a ton of useful informations
 
             self.obs[:], rewards, self.dones, infos = self.env.step(actions)
+ #           if rewards > 0: print(rewards)
             if self.dones:
                 self.env.reset()
            #print("infos", infos)
