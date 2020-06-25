@@ -49,6 +49,7 @@ flags.DEFINE_integer('num_timesteps', int(2e6),
                      'Number of timesteps to run for.')
 flags.DEFINE_integer('num_envs', 8,
                      'Number of environments to run in parallel.')
+flags.DEFINE_integer('ncpu', 8,'Number of cpus to run in parallel.')
 flags.DEFINE_integer('nsteps', 128, 'Number of environment steps per epoch; '
                      'batch size is nsteps * nenv')
 flags.DEFINE_integer('noptepochs', 4, 'Number of updates per epoch.')
@@ -93,7 +94,8 @@ def train(_):
   # we could be using TF as part of environment if one of the players is
   # controled by an already trained model.
   import tensorflow.compat.v1 as tf
-  ncpu = multiprocessing.cpu_count()
+  #ncpu = multiprocessing.cpu_count()
+  ncpu = FLAGS.ncpu
   config = tf.ConfigProto(allow_soft_placement=True,
                           intra_op_parallelism_threads=ncpu,
                           inter_op_parallelism_threads=ncpu)

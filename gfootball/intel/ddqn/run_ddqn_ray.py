@@ -27,6 +27,7 @@ flags.DEFINE_integer('num_timesteps', int(2e7),
                      'Number of timesteps to run for.')
 flags.DEFINE_integer('num_envs', 8,
                      'Number of environments to run in parallel.')
+flags.DEFINE_integer('ncpu', 8,'Number of cpus to run in parallel.')
 flags.DEFINE_integer('nsteps', 16, 'Number of environment steps per epoch; '
                      'batch size of runner is nsteps * nenv')
 flags.DEFINE_integer('batch_size', 64, 'Number of environment steps for trainer')
@@ -46,7 +47,6 @@ flags.DEFINE_bool('dump_full_episodes', False,
 flags.DEFINE_bool('dump_scores', False,
                   'If True, sampled traces after scoring are dumped.')
 flags.DEFINE_string('load_path', None, 'Path to load initial checkpoint from.')
-
 
 
 env_cfg = {
