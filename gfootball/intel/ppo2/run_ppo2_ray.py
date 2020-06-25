@@ -71,7 +71,7 @@ flags.DEFINE_string('load_path', None, 'Path to load initial checkpoint from.')
 
 
 env_cfg = {
-    'level': 'academy_run_to_score_with_keeper',
+    'level': '11_vs_11_easy_stochastic',
     'action_set': 'default',
     'dump_full_episodes': False,
     'dump_scores': False,
@@ -107,7 +107,7 @@ def train(_):
                  nenvs=FLAGS.num_envs,
                  network=FLAGS.policy,
                  total_timesteps=FLAGS.num_timesteps,
-                 env_cfg= env_cfg,
+                 env_cfg=env_cfg,
                  seed=FLAGS.seed,
                  nsteps=FLAGS.nsteps,
                  nminibatches=FLAGS.nminibatches,

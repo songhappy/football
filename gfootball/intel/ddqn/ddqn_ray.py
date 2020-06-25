@@ -10,6 +10,7 @@ from pympler import muppy, summary, asizeof
 from gfootball.intel.ddqn.agents_keras import DoubleDQNAgent
 from collections import deque
 import time
+from gfootball.intel.im.preprocess import observation_sim
 
 @ray.remote(memory=2000 * 1024 * 1024)
 class Runner():
@@ -39,11 +40,12 @@ class Runner():
         memory = []
         # For n in range number of steps
         for _ in range(self.nsteps):
-
-            state = np.reshape(self.obs, [1, self.state_size])
+            state = observation_sim(self.obs)
+            # state = np.reshape(self.obs, [1, self.state_size])
             action = self.agent.get_action(state)
             self.obs, reward, done, _ = self.env.step(action)
-            next_state = np.reshape(self.obs, [1, self.state_size])
+            next_state = observation_sim(self.obs)
+            #next_state = np.reshape(self.obs, [1, self.state_size])
             memory.append([state, action, reward, next_state, done])
 
             if done:

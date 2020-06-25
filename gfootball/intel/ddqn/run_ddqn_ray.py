@@ -23,7 +23,7 @@ flags.DEFINE_enum('reward_experiment', 'scoring,checkpoints',
                   'Reward to be used for training.')
 flags.DEFINE_enum('policy', 'mlp', ['mlp'],
                   'Policy architecture')
-flags.DEFINE_integer('num_timesteps', int(2e6),
+flags.DEFINE_integer('num_timesteps', int(2e7),
                      'Number of timesteps to run for.')
 flags.DEFINE_integer('num_envs', 8,
                      'Number of environments to run in parallel.')
@@ -31,7 +31,7 @@ flags.DEFINE_integer('nsteps', 16, 'Number of environment steps per epoch; '
                      'batch size of runner is nsteps * nenv')
 flags.DEFINE_integer('batch_size', 64, 'Number of environment steps for trainer')
 flags.DEFINE_integer('memo_size', 2000, 'Number of environment steps for memory')
-flags.DEFINE_integer('noptepochs', 4, 'Number of updates per epoch.')
+flags.DEFINE_integer('noptepochs', 16, 'Number of updates per epoch.')
 flags.DEFINE_integer('save_interval', 100,
                      'How frequently checkpoints are saved.')
 flags.DEFINE_integer('seed', 0, 'Random seed.')
@@ -61,7 +61,7 @@ env_cfg = {
         'render': False,
         'stacked': False,
         'rewards': "scoring,checkpoints",
-        'representation': 'simple115'
+        'representation': 'raw'
     }
 
 def train(_):
@@ -73,7 +73,7 @@ def train(_):
                  network=FLAGS.policy,
                  total_timesteps=FLAGS.num_timesteps,
                  env_cfg= env_cfg,
-                 state_size=115,
+                 state_size=83,
                  nsteps=FLAGS.nsteps,
                  batch_size=FLAGS.batch_size,
                  memo_size=FLAGS.memo_size,
