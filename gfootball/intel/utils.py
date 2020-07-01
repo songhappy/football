@@ -4,20 +4,42 @@ from gfootball.env import observation_preprocessing
 import gfootball.env as football_env
 from baselines.common.policies import build_policy
 
+def dist2gate(position):
+    distance = ((1-position[0])**2 + position[1]**2)**(0.5)
+    return distance
+
+def seg_reward(reward):
+    if -0.1 < reward <= 0.005:
+        n_reward = -0.1
+    elif 0.005 < reward < 0.01:
+        n_reward = 0
+    elif 0.01 <= reward < 0.1:
+        n_reward = 0.1
+    else:
+        n_reward = round(reward, 3)
+    return n_reward
+
+
+def shape_reward(reward, obs):
+
+    return
+
+
+
 
 def create_env(cfg_values):
     """Creates gfootball environment."""
     c = config.Config(cfg_values)
     env = football_env.football_env.FootballEnv(c)
-    channel_dimensions = (
-        observation_preprocessing.SMM_WIDTH,
-        observation_preprocessing.SMM_HEIGHT)
-    number_of_left_players_agent_controls=1
-    number_of_right_players_agent_controls=0
-    env =football_env._apply_output_wrappers(
-        env, cfg_values['rewards'], cfg_values["representation"], channel_dimensions,
-        (number_of_left_players_agent_controls +
-         number_of_right_players_agent_controls == 1), cfg_values['stacked'])
+    # channel_dimensions = (
+    #     observation_preprocessing.SMM_WIDTH,
+    #     observation_preprocessing.SMM_HEIGHT)
+    # number_of_left_players_agent_controls=1
+    # number_of_right_players_agent_controls=0
+    # env =football_env._apply_output_wrappers(
+    #     env, cfg_values['rewards'], cfg_values["representation"], channel_dimensions,
+    #     (number_of_left_players_agent_controls +
+    #      number_of_right_players_agent_controls == 1), cfg_values['stacked'])
 
     return env
 

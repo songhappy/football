@@ -21,7 +21,7 @@ flags.DEFINE_enum('state', 'extracted_stacked', ['extracted',
 flags.DEFINE_enum('reward_experiment', 'scoring,checkpoints',
                   ['scoring', 'scoring,checkpoints'],
                   'Reward to be used for training.')
-flags.DEFINE_enum('policy', 'mlp', ['mlp'],
+flags.DEFINE_enum('policy', 'jiaoda_cnn', ['mlp', 'jiaoda_cnn'],
                   'Policy architecture')
 flags.DEFINE_integer('num_timesteps', int(2e7),
                      'Number of timesteps to run for.')
@@ -32,7 +32,7 @@ flags.DEFINE_integer('nsteps', 16, 'Number of environment steps per epoch; '
                      'batch size of runner is nsteps * nenv')
 flags.DEFINE_integer('batch_size', 64, 'Number of environment steps for trainer')
 flags.DEFINE_integer('memo_size', 2000, 'Number of environment steps for memory')
-flags.DEFINE_integer('noptepochs', 16, 'Number of updates per epoch.')
+flags.DEFINE_integer('noptepochs', 1, 'Number of updates per epoch.')
 flags.DEFINE_integer('save_interval', 100,
                      'How frequently checkpoints are saved.')
 flags.DEFINE_integer('seed', 0, 'Random seed.')
@@ -61,7 +61,7 @@ env_cfg = {
         'render': False,
         'stacked': False,
         'rewards': "scoring,checkpoints",
-        'representation': 'raw'
+        'representation': 'extracted'
     }
 
 def train(_):
@@ -73,7 +73,7 @@ def train(_):
                  network=FLAGS.policy,
                  total_timesteps=FLAGS.num_timesteps,
                  env_cfg= env_cfg,
-                 state_size=83,
+                 state_shape=[72, 96, 4],
                  nsteps=FLAGS.nsteps,
                  batch_size=FLAGS.batch_size,
                  memo_size=FLAGS.memo_size,
