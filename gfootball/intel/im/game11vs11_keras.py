@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import time
 
 TRAIN = True
-RENDER = False
+RENDER = True
 DUMP = False
 Score_length = 50
 filter_positive = False
@@ -29,7 +29,7 @@ def main():
 
     actions_size = len(action_set_dict["default"])
     feature_size = 195
-    if (TRAIN):
+    if (not TRAIN):
         labels, states = load_data(input_path,"score", score_length, filter_positive)
         print(labels.shape)
         print(states.shape)
