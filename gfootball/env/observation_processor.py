@@ -203,6 +203,7 @@ def write_dump(name, trace, config):
             writer.write('%s: %.5f' % (action.name, prob), scale_factor=0.5)
         for d in o._debugs:
           writer.write(d)
+#      print("frame count:",frame_cnt)
       video.write(frame)
       for frame in o._additional_frames:
         frame = frame[..., ::-1]
@@ -223,7 +224,7 @@ def write_dump(name, trace, config):
   for o in trace:
     if 'frame' in o._trace['observation']:
       temp_frames.append(o._trace['observation']['frame'])
-      del o._trace['observation']['frame']
+      #del o._trace['observation']['frame']
     to_pickle.append(o._trace)
   assert len(temp_frames) == 0 or len(temp_frames) == len(trace)
   # Add config to the first frame for our replay tools to use.
@@ -290,12 +291,12 @@ class ObservationProcessor(object):
         max_length=50,
         max_count=(100000 if config['dump_scores'] else 0),
         min_frequency=1,
-        snapshot_delay=10)
+        snapshot_delay=1)
     self._dump_config['lost_score'] = DumpConfig(
         max_length=50,
         max_count=(100000 if config['dump_scores'] else 0),
         min_frequency=1,
-        snapshot_delay=10)
+        snapshot_delay=1)
     self._dump_config['episode_done'] = DumpConfig(
         max_length=10000,
         max_count=(100000 if config['dump_full_episodes'] else 0))
@@ -333,7 +334,7 @@ class ObservationProcessor(object):
       # consumes over 8G.
       no_video_trace = trace
       no_video_trace['observation'] = trace['observation'].copy()
-      del no_video_trace['observation']['frame']
+      #del no_video_trace['observation']['frame']
       self._state = ObservationState(no_video_trace)
     else:
       self._state = ObservationState(trace)

@@ -97,14 +97,14 @@ def load_1file(dump_file,  score_length = 100, filter_positive = True):
     #     print(labels[i], rewards[i])
     return(np.array(labels[:], dtype=np.float32), np.array(states[:], dtype=np.float32))
 
-def load_data(input_path, tag,  score_length = 100, filter_positive = True):
+def load_data(input_path, tag,  score_length = 50, filter_positive = True):
     files = os.listdir(input_path)[:]
     labels = []
     states = []
-    for ifile in files:
-        if tag in ifile and os.path.getsize(input_path+ifile) > 0:
+    for ifilename in files:
+        if ifilename.startswith(tag) and os.path.getsize(input_path+ifilename) > 0:
             #print(ifile)
-            ilabels, istates = load_1file(input_path + ifile, score_length, filter_positive)
+            ilabels, istates = load_1file(input_path + ifilename, score_length, filter_positive)
             if len(ilabels) > 0:
                 labels.append(ilabels)
                 states.append(istates)

@@ -30,16 +30,16 @@ flags.DEFINE_integer('num_envs', 8,
 flags.DEFINE_integer('ncpu', 8,'Number of cpus to run in parallel.')
 flags.DEFINE_integer('nsteps', 16, 'Number of environment steps per epoch; '
                      'batch size of runner is nsteps * nenv')
-flags.DEFINE_integer('batch_size', 64, 'Number of environment steps for trainer')
+flags.DEFINE_integer('batch_size', 32, 'Number of environment steps for trainer')
 flags.DEFINE_integer('memo_size', 2000, 'Number of environment steps for memory')
 flags.DEFINE_integer('noptepochs', 1, 'Number of updates per epoch.')
 flags.DEFINE_integer('save_interval', 100,
                      'How frequently checkpoints are saved.')
 flags.DEFINE_integer('seed', 0, 'Random seed.')
-flags.DEFINE_float('lr', 0.00008, 'Learning rate')
-flags.DEFINE_float('gama', 0.993, 'Discount factor')
+flags.DEFINE_float('lr', 0.00001475, 'Learning rate')
+flags.DEFINE_float('gama', 0.999, 'Discount factor')
 flags.DEFINE_float('epsilon_min', 0.01, 'minimal epsilon')
-flags.DEFINE_float('epsilon_decay', 0.9, 'epsilon_decay')
+flags.DEFINE_float('epsilon_decay', 0.99999, 'epsilon_decay')
 
 flags.DEFINE_bool('render', False, 'If True, environment rendering is enabled.')
 flags.DEFINE_bool('dump_full_episodes', False,

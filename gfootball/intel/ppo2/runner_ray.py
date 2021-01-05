@@ -7,8 +7,11 @@ import tensorflow as tf
 from gfootball.intel.utils import create_env, create_model_ppo2
 
 from pympler import muppy, summary, asizeof
+import sys
+import numpy
+#@ray.remote(memory=2500 * 1024 * 1024)
 
-@ray.remote(memory=2500 * 1024 * 1024)
+@ray.remote(memory=1000 * 1024 * 1024)
 class Runner(AbstractEnvRunner):
     """
     We use this object to make a mini batch of experiences
@@ -72,6 +75,8 @@ class Runner(AbstractEnvRunner):
 
 
     def run(self, params_id):
+        numpy.set_printoptions(threshold=sys.maxsize)
+
         # Here, we init the lists that will contain the mb of experiences
         self.update_model(params_id)
 

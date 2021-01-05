@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from gfootball.intel.im.models import MovementPredictorKeras, MovementPredictorZoo
+from gfootball.intel.im.models import MovementPredictorZoo
+#from gfootball.intel.im.models import MovementPredictorKeras
 from gfootball.intel.im.preprocess import *
 from matplotlib import pyplot as plt
 from zoo.orca import init_orca_context, stop_orca_context
@@ -35,7 +36,7 @@ def main():
         labels, states = load_data(input_path,"score", score_length, filter_positive)
         print(labels.shape)
         print(states.shape)
-        #sys.exit()
+        sys.exit()
         train_split = 1360000
         val_split=20000
         train_labels = labels[0:train_split]; val_labels = labels[-val_split:-1]

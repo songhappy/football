@@ -31,15 +31,15 @@ def create_env(cfg_values):
     """Creates gfootball environment."""
     c = config.Config(cfg_values)
     env = football_env.football_env.FootballEnv(c)
-    # channel_dimensions = (
-    #     observation_preprocessing.SMM_WIDTH,
-    #     observation_preprocessing.SMM_HEIGHT)
-    # number_of_left_players_agent_controls=1
-    # number_of_right_players_agent_controls=0
-    # env =football_env._apply_output_wrappers(
-    #     env, cfg_values['rewards'], cfg_values["representation"], channel_dimensions,
-    #     (number_of_left_players_agent_controls +
-    #      number_of_right_players_agent_controls == 1), cfg_values['stacked'])
+    channel_dimensions = (
+        observation_preprocessing.SMM_WIDTH,
+        observation_preprocessing.SMM_HEIGHT)
+    number_of_left_players_agent_controls=1
+    number_of_right_players_agent_controls=0
+    env =football_env._apply_output_wrappers(
+        env, cfg_values['rewards'], cfg_values["representation"], channel_dimensions,
+        (number_of_left_players_agent_controls +
+         number_of_right_players_agent_controls == 1), cfg_values['stacked'])
 
     return env
 

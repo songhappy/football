@@ -72,7 +72,6 @@ class MovementPredictorKeras(object):
     def save(self, path_name):
         self.model.save_weights(path_name)
 
-
 class MovementPredictorZoo(object):
 
     def __init__(self, action_size, state_shape):
@@ -105,7 +104,6 @@ class MovementPredictorZoo(object):
 
     def train(self,  states, labels, batch_size, epoch=10, validation_split=0.1, model_path="./"):
         shaped = np.zeros([len(labels), self.action_size])
-        checkpoint = ModelCheckpoint(model_path+"/best_model.h5", monitor='val_loss', verbose=1, save_best_only=True, mode="min")
         for i in range(len(labels)):
             shaped[i][int(labels[i])] = 1
         history = self.model.fit(x=states, y=shaped,\

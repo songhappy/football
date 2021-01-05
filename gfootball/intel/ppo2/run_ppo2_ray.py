@@ -105,8 +105,7 @@ def train(_):
   import  time
   start = time.time()
 
-  ppo2_ray.learn(address=FLAGS.address,
-                 nenvs=FLAGS.num_envs,
+  ppo2_ray.learn(nenvs=FLAGS.num_envs,
                  network=FLAGS.policy,
                  total_timesteps=FLAGS.num_timesteps,
                  env_cfg=env_cfg,

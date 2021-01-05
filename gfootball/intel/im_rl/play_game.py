@@ -7,15 +7,14 @@ from gfootball.intel.im.preprocess import *
 
 import numpy as np
 
-TRAINIM = True
+TRAINIM = False
 TRAINRL = True
 DURATION = 600
 RENDER = False
 DUMP = False
-model_path = "/home/arda/intelWork/projects/googleFootball/dumpFeb4_model_im"
+model_path = "/home/arda/intelWork/projects/googleFootball/dumpSep22_model_keras/best_model.h5"
 
 def main():
-    input_path = "/home/arda/intelWork/projects/googleFootball/dumpFeb4/"
 
     players = ['agent:left_players=1']
     cfg = config.Config({
@@ -23,11 +22,11 @@ def main():
         'dump_full_episodes': DUMP,
         'players': players,
         'real_time': True,
-        'level': 'academy_run_to_score_with_keeper',
+        'level': '11_vs_11_easy_stochastic',
     })
 
     actions_size = len(action_set_dict["default"])
-    feature_size = 83
+    feature_size = 195
 
     if(TRAINRL):
         env = football_env.FootballEnv(cfg)

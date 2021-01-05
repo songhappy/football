@@ -14,7 +14,8 @@ from gfootball.intel.im.preprocess import observation_sim
 import sys
 from gfootball.intel.utils import dist2gate, seg_reward
 from gfootball.env import wrappers
-
+import sys
+import numpy
 @ray.remote(memory=2000 * 1024 * 1024)
 class Runner():
     """
@@ -39,6 +40,7 @@ class Runner():
 
     def run(self, params):
         self.agent.model.set_weights(params)
+        numpy.set_printoptions(threshold=sys.maxsize)
 
         memory = []
         # For n in range number of steps
@@ -47,9 +49,14 @@ class Runner():
             # print(self.obs)
             #state = observation_sim(self.obs)
             #state = np.reshape(self.obs, [1, self.state_size])
-            obs_wrapper = wrappers.SMMWrapper(self.env)
-            state = obs_wrapper.observation(self.obs)
-            state = state / 255
+            # obs_wrapper = wrappers.SMMWrapper(self.env)
+            # state = obs_wrapper.observation(self.obs)
+            state = self.obs
+            print(str(state))
+            print(state.shape)
+
+            #state = state / 255.0
+
             # print("max", np.amax(state))
             # print("min", np.amin(state))
             # print("type", type(state[0][0][0][0]))
@@ -69,7 +76,7 @@ class Runner():
             #next_state = np.reshape(self.obs, [1, self.state_size])
             #next_state = self.obs
             next_state = obs_wrapper.observation(self.obs)
-            next_state = next_state / 255
+            next_state = next_state / 255.0
 
             memory.append([state, action, reward, next_state, done])
             if done:
@@ -85,8 +92,8 @@ class Runner():
         del(params)
         return memory
 
-def learn(*, address, nenvs, network="mlp", env_cfg, total_timesteps, state_shape=[72,96,4], nsteps=16,
-          batch_size=64, memo_size=2000, noptepochs=4, gama=0.999, lr=0.0008, epsilon_min=0.01, epsilon_decay=0.9, train_start=1000,
+def learn(*, address, nenvs, network="mlp", env_cfg, total_timesteps, state_shape=[72,96,4], nsteps=32,
+          batch_size=128, memo_size=4000, noptepochs=4, gama=0.999, lr=0.0008, epsilon_min=0.01, epsilon_decay=0.9, train_start=1000,
           logdir=logger.get_dir(), log_interval=None, save_interval=None):
 
     action_size = len(action_set_dict["default"])
@@ -136,7 +143,7 @@ def learn(*, address, nenvs, network="mlp", env_cfg, total_timesteps, state_shap
 
         runner_time = time.perf_counter()
         agent.train_model(memory=memory, k=noptepochs)
-        if update % 50 == 0 or update == 1:
+        if update % 500 == 0 or update == 1:
             agent.update_target_model()
         params = agent.model.get_weights()
         params_id = ray.put(params)

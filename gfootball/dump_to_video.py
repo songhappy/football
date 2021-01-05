@@ -21,6 +21,7 @@ from gfootball.env import script_helpers
 FLAGS = flags.FLAGS
 flags.DEFINE_string('trace_file', None, 'Trace file to render')
 flags.mark_flag_as_required('trace_file')
+FLAGS.trace_file="/tmp/dumps/test.dump"
 
 
 def main(_):

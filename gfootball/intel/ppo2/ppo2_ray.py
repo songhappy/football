@@ -5,6 +5,7 @@ from baselines import logger
 from collections import deque
 from baselines.common import explained_variance, set_global_seeds
 from baselines.common.tf_util import get_session
+from pyspark import SparkConf
 
 try:
     from mpi4py import MPI
@@ -18,7 +19,7 @@ def constfn(val):
         return val
     return f
 
-def learn(*, address, nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=None, nsteps=2048, ent_coef=0.0, lr=3e-4,
+def learn(*,nenvs, network, env_cfg, total_timesteps, eval_env = None, seed=None, nsteps=2048, ent_coef=0.0, lr=3e-4,
           vf_coef=0.5, max_grad_norm=0.5, gamma=0.99, lam=0.95, logdir=logger.get_dir(),
           log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,
           save_interval=0, load_path=None, model_fn=None, update_fn=None, init_fn=None, mpi_rank_weight=1, comm=None, **network_kwargs):
@@ -109,7 +110,13 @@ def learn(*, address, nenvs, network, env_cfg, total_timesteps, eval_env = None,
     nbatch_train = nbatch // nminibatches
     is_mpi_root = (MPI is None or MPI.COMM_WORLD.Get_rank() == 0)
 
-    ray.init(address=address, lru_evict=True)
+    import ray
+    from zoo.ray import RayContext
+    from zoo import init_spark_on_local
+    conf = {"spark.executor.memory":"20g","spark.driver.memory":"20g"}
+    sc = init_spark_on_local(cores=8, conf=conf)
+    ray_ctx = RayContext(sc=sc, object_store_memory="2g")
+    ray_ctx.init()
 
     # Instantiate the model object (that creates act_model and train_model)
     model = create_model_ppo2(model_cfg, env)
@@ -253,6 +260,9 @@ def learn(*, address, nenvs, network, env_cfg, total_timesteps, eval_env = None,
         for e in params:
             params_vals.append(e.eval())
         params_id = ray.put(params_vals)
+
+    ray_ctx.stop()
+    sc.stop()
 
     return model
 # Avoid division error when calculate the mean (in our case if epinfo is empty returns np.nan, not return an error)

@@ -37,7 +37,7 @@ flags.DEFINE_string('level', 'academy_pass_and_shoot_with_keeper', 'Level to pla
 flags.DEFINE_enum('action_set', 'default', ['default', 'full'], 'Action set')
 flags.DEFINE_bool('real_time', True,
                   'If true, environment will slow down so humans can play.')
-flags.DEFINE_bool('render', False, 'Whether to do game rendering.')
+flags.DEFINE_bool('render', True, 'Whether to do game rendering.')
 
 
 def main(_):
@@ -51,8 +51,11 @@ def main(_):
       'dump_scores': True,
       'players': players,
       'real_time': False,
-      'render': False,
-      'level': '11_vs_11_easy_stochastic',
+      'render': True,
+      'level': FLAGS.level,
+      'display_game_stats':True,
+      'video_quality_level': 1,  # 0 - low, 1 - medium, 2 - high
+      'write_video': True
   })
 
   env = football_env.FootballEnv(cfg)
@@ -66,7 +69,7 @@ def main(_):
   try:
     nepisode = 0
     step = 0
-    while nepisode < 10000:
+    while nepisode < 1:
       step = step + 1
       obs, reward, done, info = env.step([])
       if done:

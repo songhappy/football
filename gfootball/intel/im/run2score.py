@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from gfootball.intel.im.models import MovementPredictor
+from gfootball.intel.im.models import MovementPredictorKeras
 from gfootball.intel.im.preprocess import *
 
 TRAIN = True
@@ -31,7 +31,7 @@ def main():
         train_labels = labels[0:train_split]; val_labels = labels[-val_split:-1]
         train_states= states[0:train_split]; val_states = states[-val_split:-1]
 
-        agent = MovementPredictor(actions_size, [feature_size])
+        agent = MovementPredictorKeras(actions_size, [feature_size])
         for nepoch in range(1, 15):
             agent.train(train_states, train_labels, 64, epoch=1)
             loss, acc = agent.evaluate(val_states, val_labels)
@@ -42,7 +42,7 @@ def main():
         if RENDER:
             env.render()
         env.reset()
-        agent = MovementPredictor(actions_size, [feature_size])
+        agent = MovementPredictorKeras(actions_size, [feature_size])
         agent.load(model_path)
         #print(agent.model.get_weights())
         obs, reward, done, info = env.step(env.action_space.sample())
